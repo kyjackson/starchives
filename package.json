@@ -1,0 +1,26 @@
+{
+  "name": "archivesc-1",
+  "version": "1.0.0",
+  "description": "My website which allows users to enter a search query and return matching results from the auto-generated captions for all videos uploaded to the Star Citizen channel on Youtube.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyjackson/archive.sc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kyjackson/archive.sc/issues"
+  },
+  "homepage": "https://github.com/kyjackson/archive.sc#readme",
+  "dependencies": {
+    "ejs": "^3.1.6",
+    "express": "^4.17.2",
+    "jquery": "^3.6.0",
+    "mysql": "^2.18.1"
+  }
+}
