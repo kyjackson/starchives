@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
   res.render('home')
 });
 
-// videos route
+// library route
 app.get('/library', (req, res) => {
   res.render('library')
 });

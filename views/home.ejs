@@ -1,13 +1,50 @@
 <%- include("partials/header.ejs") %>
 
-<h1>This is the home page</h1>
+<div class="container px-0 py-3">
 
-<nav>
+  <!-- Jumbotron card containing search bar -->
+  <div class="p-5 mb-4 text-white bg-dark rounded-3">
+    <div class="container-fluid">
+      <h1 class="display-6 fw">Enter Query</h1>
+      <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among the videos uploaded to the Star Citizen Youtube channel.</p>
 
-  <a href="/">Home</a> |
-  <a href="/library">Library</a> |
-  <a href="/about">About</a>
+      <div class="row justify-content-center">
+        <div class="my-4 col-9">
+          <input type="text" class="form-control text-center" id="query" placeholder="Search...">
+        </div>
+      </div>
 
-</nav>
+      <button class="btn btn-light btn-lg" type="button">Search Archive</button>
+    </div>
+  </div>
+
+  <!-- Cards containing purpose statement and search stats -->
+  <div class="row align-items-md-stretch">
+    
+    <!-- Purpose statement card -->
+    <div class="col-md-6 mb-4">
+      <div class="h-100 p-5 justify-content-left text-white bg-dark rounded-3">
+        <h2>Purpose</h2>
+        <p class="text-start">At the time of writing this, there are over 1200 videos uploaded to Star Citizen's official Youtube channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, people will often bring up something a developer at CIG said in one or more videos uploaded years ago. With multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to provide sources for their claims or fact-check the claims of others will have an exceedingly difficult time doing so if they don't know the particular video.</p>
+
+        <p class="text-start">With the advent of Youtube's auto-generated captions, this changes. This site allows anyone to search a database of official Star Citizen videos and their associated captions to quickly find the information they're searching for. Full transcriptions of each video are provided, along with timestamps for search terms that have a match. Searching for a specific phrase should now take minutes, not hours, of combing through videos. Additionally, search stats are provided so anyone can see what the community has been most curious about.</p>
+        
+      </div>
+    </div>
+
+    <!-- Search stats card -->
+    <div class="col-md-6 mb-4">
+      <div class="h-100 p-5 text-white bg-dark rounded-3">
+        <h2>Stats</h2>
+        <p>Coming soon</p>
+      </div>
+    </div>
+
+  </div>
+
+  
+
+</div>
+
 
 <%- include("partials/footer.ejs") %>
