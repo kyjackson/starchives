@@ -20,6 +20,7 @@
   "dependencies": {
     "ejs": "^3.1.6",
     "express": "^4.17.2",
+    "googleapis": "^92.0.0",
     "jquery": "^3.6.0",
     "mysql": "^2.18.1"
   }

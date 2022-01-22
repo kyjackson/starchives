@@ -2,12 +2,86 @@
 const express = require('express');
 const mysql = require('mysql');
 
+const fs = require('fs');
+const readline = require('readline');
+const {google} = require('googleapis');
+
 // create the Express application
 const app = express();
 
-// set Express to use the EJS template engine
+// set Express to use the EJS template engine, set "public" as root folder to serve from
 app.set("view engine", "ejs");
 app.use(express.static("public"));
+
+// simplify youtube api access
+const youtube = google.youtube('v3');
+const key = 'AIzaSyD-QWKchiTP5CSzScpbR1kfddR_GGnm0ak';
+const rsiChannelId = 'UCTeLqJq1mXUX5WWoNXLmOIA';
+const playlist0 = 'PLVct2QDhDrB2HMkwQar8kZDPZP7ZdyIAC';
+
+async function getChannelInfo(key) {
+  const res = await youtube.channelSections.list({
+    auth: key,
+    channelId: rsiChannelId,
+    part: 'snippet, contentDetails'
+  });
+
+  var channelItems = res.data.items;
+
+  console.log(channelItems[0].contentDetails.playlists[0]);
+
+  
+  //console.log(res.status);
+}
+
+async function getPlaylists(key) {
+  const res = await youtube.playlists.list({
+    auth: key,
+    channelId: rsiChannelId,
+    part: 'snippet, contentDetails'
+  });
+
+  var playlistItems = res.data.items;
+
+  console.log(playlistItems);
+  //console.log(res.status);
+}
+
+/**
+ * Lists the names and IDs of up to 10 files.
+ *
+ * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+ */
+function getChannel(auth) {
+  var service = google.youtube('v3');
+  service.channels.list({
+    auth: auth,
+    part: 'snippet,contentDetails,statistics',
+    forUsername: 'RobertsSpaceInd'
+  }, function(err, response) {
+    if (err) {
+      console.log('The API returned an error: ' + err);
+      return;
+    }
+    var channels = response.data.items;
+    if (channels.length == 0) {
+      console.log('No channel found.');
+    } else {
+      console.log(channels);
+      console.log('This channel\'s ID is %s. Its title is \'%s\', and ' +
+                  'it has %s views.',
+                  channels[0].id,
+                  channels[0].snippet.title,
+                  channels[0].statistics.viewCount);
+    }
+  });
+}
+
+//getChannel(key);
+
+//getChannelInfo(key);
+
+getPlaylists(key);
 
 //---------------------------------------------Routes---------------------------------------------------
 
