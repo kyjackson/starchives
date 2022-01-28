@@ -5,6 +5,7 @@ const mysql = require('mysql');
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
+const getSubtitles = require('youtube-captions-scraper').getSubtitles;
 
 // create the Express application
 const app = express();
@@ -17,71 +18,109 @@ app.use(express.static("public"));
 const youtube = google.youtube('v3');
 const key = 'AIzaSyD-QWKchiTP5CSzScpbR1kfddR_GGnm0ak';
 const rsiChannelId = 'UCTeLqJq1mXUX5WWoNXLmOIA';
-const playlist0 = 'PLVct2QDhDrB2HMkwQar8kZDPZP7ZdyIAC';
+const uploads = 'UUTeLqJq1mXUX5WWoNXLmOIA'; // for testing: what info can be accessed with this playlist ID?
+const video0 = 'RgmBWBldFZM'; // for testing: can captions be retrieved from this videoId?
 
-async function getChannelInfo(key) {
-  const res = await youtube.channelSections.list({
-    auth: key,
-    channelId: rsiChannelId,
-    part: 'snippet, contentDetails'
-  });
-
-  var channelItems = res.data.items;
-
-  console.log(channelItems[0].contentDetails.playlists[0]);
-
-  
-  //console.log(res.status);
-}
-
-async function getPlaylists(key) {
-  const res = await youtube.playlists.list({
-    auth: key,
-    channelId: rsiChannelId,
-    part: 'snippet, contentDetails'
-  });
-
-  var playlistItems = res.data.items;
-
-  console.log(playlistItems);
-  //console.log(res.status);
-}
-
-/**
- * Lists the names and IDs of up to 10 files.
- *
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+/*
+ * Access tree from channel to caption:
+ * 
+ * channel > playlists > playlistItems > videos > caption
+ * 
+ * apply youtube timestamp: &t=[minutes]m[seconds]s || &t=[seconds]
  */
-function getChannel(auth) {
-  var service = google.youtube('v3');
-  service.channels.list({
-    auth: auth,
-    part: 'snippet,contentDetails,statistics',
-    forUsername: 'RobertsSpaceInd'
-  }, function(err, response) {
-    if (err) {
-      console.log('The API returned an error: ' + err);
-      return;
+
+//---------------------------------------------DB Update Functions---------------------------------------------------
+
+/*
+ * this function gathers all desired playlist info and sends it to the database "playlists" table
+ */
+async function updateDbPlaylists(key, channelId) {
+
+    // get all playlists
+    var playlists = await getPlaylists(key, rsiChannelId);
+    
+    // create array of playlist objects for tidy sendoff
+    var playlistObjects = [];
+
+    // for each playlist, make a new object representing that playlist with the specific data we want
+    // and add it to the array of playlist objects
+    for (var element of playlists) {
+        playlistObjects.push({
+            playlistId: element.id,
+            title: element.snippet.title,
+            publishDate: element.snippet.publishedAt,
+            videoCount: element.contentDetails.itemCount,
+            videos: []
+        });
     }
-    var channels = response.data.items;
-    if (channels.length == 0) {
-      console.log('No channel found.');
-    } else {
-      console.log(channels);
-      console.log('This channel\'s ID is %s. Its title is \'%s\', and ' +
-                  'it has %s views.',
-                  channels[0].id,
-                  channels[0].snippet.title,
-                  channels[0].statistics.viewCount);
-    }
-  });
+    //console.log(playlistObjects);
+
+    //todo: retrieve IDs of all videos in each playlist and update the appropriate playlistObjects with them
+
+    // var videos[] = getVideos(playlistId);
+
+    var videoId = video0;
+    
+    //todo: get captions of each video
+    
+    var captions = await getSubtitles({videoID: video0});
+    //console.log(captions);
 }
 
-//getChannel(key);
+updateDbPlaylists(key);
 
-//getChannelInfo(key);
+/*
+ * this function returns an object consisting of some of the channel's info
+ */
+async function getChannelInfo(key, channelId) {
+    const res = await youtube.channels.list({
+        auth: key,
+        id: channelId,
+        part: 'snippet, contentDetails, statistics'
+    });
 
-getPlaylists(key);
+    var channelItems = res.data.items[0].contentDetails.relatedPlaylists; // retrieves "uploads" playlist
+
+    // create object to send to the database
+    var channelInfo = {
+        // channeId, etc.
+    }
+
+    console.log(channelItems);
+    return channelInfo;
+}
+
+/*
+ * this function returns an array of all playlists created by the channel and some info about them
+ */
+async function getPlaylists(key, channelId) {
+    const res = await youtube.playlists.list({
+        auth: key,
+        channelId: channelId,
+        part: 'snippet, contentDetails',
+        maxResults: 100
+    });
+
+    var playlists = res.data.items;       // returns all playlists
+    var playlist1 = res.data.items[0];    // returns first playlist
+
+    // create object to send to the database
+    var playlistObject = {
+        playlistId: playlist1.id,
+        title: playlist1.snippet.title,
+        publishDate: playlist1.snippet.publishedAt,
+        videoCount: playlist1.contentDetails.itemCount
+    };
+
+    //console.log(playlistObject);
+    return playlists;
+}
+
+
+
+//getChannelInfo(key, rsiChannelId);
+
+//getPlaylists(key, rsiChannelId);
 
 //---------------------------------------------Routes---------------------------------------------------
 
@@ -140,7 +179,7 @@ app.get("/results", async function(req, res) {
   res.render('results', { "rows": rows });
 });
 
-//---------------------------------------------Database and query setup---------------------------------------------------
+//---------------------------------------------Database and Query Setup---------------------------------------------------
 
 //function for querying the database 
 async function executeSQL(sql, params) {

@@ -22,6 +22,7 @@
     "express": "^4.17.2",
     "googleapis": "^92.0.0",
     "jquery": "^3.6.0",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "youtube-captions-scraper": "^2.0.0"
   }
 }
