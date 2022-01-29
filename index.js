@@ -3,9 +3,12 @@ const express = require('express');
 const mysql = require('mysql');
 
 const fs = require('fs');
+const buffer = require('buffer');
 const readline = require('readline');
 const {google} = require('googleapis');
-const getSubtitles = require('youtube-captions-scraper').getSubtitles;
+const {getSubtitles}  = require('youtube-captions-scraper');
+const https = require('https');
+//const axios = require('axios').default;
 
 // create the Express application
 const app = express();
@@ -31,6 +34,13 @@ const video0 = 'RgmBWBldFZM'; // for testing: can captions be retrieved from thi
 
 //---------------------------------------------DB Update Functions---------------------------------------------------
 
+/* todo
+ * this function gathers info from every updateDb function and updates the database with it using SQL
+ */
+async function updateDb() {
+
+}
+
 /*
  * this function gathers all desired playlist info and sends it to the database "playlists" table
  */
@@ -42,34 +52,167 @@ async function updateDbPlaylists(key, channelId) {
     // create array of playlist objects for tidy sendoff
     var playlistObjects = [];
 
-    // for each playlist, make a new object representing that playlist with the specific data we want
-    // and add it to the array of playlist objects
+    /*
+     * for each playlist, make a new object representing that playlist with the following data:
+     * 
+     * playlistId   - unique ID of the playlist
+     * title        - title of the playlist
+     * publishDate  - data playlist was published
+     * videoCount   - number of videos in the playlist
+     */
+    // and add each object to the array of playlist objects
     for (var element of playlists) {
         playlistObjects.push({
             playlistId: element.id,
             title: element.snippet.title,
             publishDate: element.snippet.publishedAt,
             videoCount: element.contentDetails.itemCount,
-            videos: []
         });
     }
-    //console.log(playlistObjects);
 
-    //todo: retrieve IDs of all videos in each playlist and update the appropriate playlistObjects with them
+    // return array of playlists correctly formatted for the database
+    return playlistObjects;
+}
+
+//updateDbPlaylists(key);
+
+/* 
+ * this function gathers all desired info about every playlistItem and sends it to the database 
+ * "playlistItems" table
+ */
+async function updateDbPlaylistItems(key, playlistId) {
+
+    // get all videos from the specified playlist
+    var playlistItems = await getPlaylistItems(key, playlistId);
+    
+    // create array of playlistItem objects for tidy sendoff
+    var playlistItemObjects = [];
+
+    /*
+     * for each playlistItem, make a new object representing that playlistItem with the following data:
+     * 
+     * playlistItemId               (string)    - unique ID of the playlistItem
+     * playlistItemTitle            (string)    - title of the playlistItem
+     * playlistItemPublishDate      (datetime)  - date the video was added to the playlist
+     * playlistItemDescription      (string)    - description of the playlistItem
+     * playlistId                   (string)    - unique ID of the playlist associated with the playlistItem
+     * videoId                      (string)    - unique ID of the video associated with the playlistItem
+     * videoPublishDate             (datetime)  - publish date of the video associated with the playlistItem
+     */
+    // and add each object to the array of playlist objects
+    for (var element of playlistItems) {
+        // make sure the playlistItem is a video, otherwise we don't want it
+        if (element.snippet.resourceId.kind == "youtube#video") {
+            playlistItemObjects.push({
+                playlistItemId: element.id,
+                playlistItemTitle: element.snippet.title,
+                playlistItemPublishDate: element.snippet.publishedAt,
+                playlistItemDescription: element.snippet.description,
+                playlistId: element.snippet.playlistId,
+                videoId: element.snippet.resourceId.videoId,
+                videoPublishDate: element.contentDetails.videoPublishedAt
+            });
+        }
+    }
+    //console.log(playlistItemObjects);
+
+    // return array of playlistItems correctly formatted for the database
+    return playlistItemObjects;
+}
+
+//updateDbPlaylistItems(key, uploads);
+
+/* todo
+ * this function gathers all desired info about every video and sends it to the database "videos" table
+ */
+async function updateDbVideos(key) {
+
+    // get all playlistItems from "uploads" playlist
+    var playlistItems = await getPlaylistItems(key, uploads);
+    
+    // create array of playlistItem objects to easily get videoId of each video
+    // var playlistItemObjects = [];
+    // for (var playlistItem of playlistItems) {
+    //     if (playlistItem.snippet.resourceId.kind == "youtube#video") {
+    //         playlistItemObjects.push({
+    //             videoId: playlistItem.snippet.resourceId.videoId,
+    //         });
+    //     }
+    // }
+    
+    // create array of video objects for tidy sendoff
+    var videoObjects = [];
+
+    // for each video, make a new object representing that video with the specific data we want
+    // and add it to the array of video objects
+    for (var element of playlistItems) {
+        console.log("video");
+        if (element.snippet.resourceId.kind == "youtube#video") {
+            //console.log(element.videoId);
+            //var videoInfo = await getVideoInfo(key, element.videoId);
+            // videoObjects.push({
+            //     videoId: videoInfo.id,
+            //     // title: element.snippet.title,
+            //     // publishDate: element.snippet.publishedAt,
+            //     // videoCount: element.contentDetails.itemCount,
+            //     // videos: []
+            // });
+        }   
+    }
+    
+
+    //todo: retrieve all videos from "uploads" playlist
+            // 1. use getPlaylistItems to get all videos from "uploads" playlist
+
+    // return array of videos correctly formatted for the database
+    return videoObjects;
+}
+
+//updateDbVideos(key);
+
+/* todo
+ * this function gathers caption info for all videos and sends it to the database "captions" table
+ */
+async function updateDbCaptions(key, playlistId) {
+
+    // get all videos from "uploads" playlist
+    var videos = await getPlaylistItems(key, playlistId);
+    
+    // create array of caption objects for tidy sendoff
+    var captionObjects = [];
+
+    // for each caption track, make a new object associating the track with the correct videoId
+    // and add it to the array of video objects
+    for (var element of videos) {
+        videoObjects.push({
+            // playlistId: element.id,
+            // title: element.snippet.title,
+            // publishDate: element.snippet.publishedAt,
+            // videoCount: element.contentDetails.itemCount,
+            // videos: []
+        });
+    }
+    //console.log(videoObjects);
+
+    //todo: retrieve captions for all videos on the channel
+            // 1. get list of all videos using getPlaylistItems and "uploads" playlistId
+            // 2. 
 
     // var videos[] = getVideos(playlistId);
 
     var videoId = video0;
     
     //todo: get captions of each video
-    
     var captions = await getSubtitles({videoID: video0});
     //console.log(captions);
+
+    // return array of videos correctly formatted for the database
+    return videoObjects;
 }
 
-updateDbPlaylists(key);
+//---------------------------------------------API data acquisition functions---------------------------------------------------
 
-/*
+/* todo
  * this function returns an object consisting of some of the channel's info
  */
 async function getChannelInfo(key, channelId) {
@@ -90,6 +233,8 @@ async function getChannelInfo(key, channelId) {
     return channelInfo;
 }
 
+//getChannelInfo(key, rsiChannelId);
+
 /*
  * this function returns an array of all playlists created by the channel and some info about them
  */
@@ -98,25 +243,129 @@ async function getPlaylists(key, channelId) {
         auth: key,
         channelId: channelId,
         part: 'snippet, contentDetails',
-        maxResults: 100
+        maxResults: 50
     });
 
     var playlists = res.data.items;       // returns all playlists
-    var playlist1 = res.data.items[0];    // returns first playlist
 
-    // create object to send to the database
-    var playlistObject = {
-        playlistId: playlist1.id,
-        title: playlist1.snippet.title,
-        publishDate: playlist1.snippet.publishedAt,
-        videoCount: playlist1.contentDetails.itemCount
-    };
+    var playlistsJson = JSON.stringify(playlists, null, 4); // example of converting json to string while keeping formatting
 
-    //console.log(playlistObject);
+    //console.log(playlists);
+
+    // return array of all playlists created by the channel
     return playlists;
 }
 
+//getPlaylists(key, rsiChannelId);
 
+/* todo append each page's results after loop
+ * this function returns an array (JSON promise) of all videos in a specified playlist
+ */
+async function getPlaylistItems(key, playlistId, pageToken, results) {
+    const res = await youtube.playlistItems.list({
+        auth: key,
+        playlistId: playlistId,
+        part: 'snippet, contentDetails',
+        maxResults: 50,
+        pageToken: pageToken
+    });
+
+    var tokens = []
+    
+    //1. get page results
+    //2. append results to array
+    //3. iterate to next page
+    // repeat
+
+    // loop through all pages available
+    if (res.data['nextPageToken']) {
+        console.log(res.data.nextPageToken);
+        results.push(res.data.nextPageToken);
+        getPlaylistItems(key, playlistId, res.data.nextPageToken, results);
+    } else {
+        console.log(results);
+    }
+
+    
+    //if (res.data.items == 50) {
+        
+    //}
+    
+
+    
+    var video1 = res.data.items[0];    // returns first video in the playlist
+
+    // return array of all videos in the specified playlist
+    //return playlistItems;
+}
+
+getPlaylistItems(key, uploads, "", []);
+
+/* 
+ * this function returns all info about a specified video
+ */
+async function getVideoInfo(key, videoId) {
+    const res = await youtube.videos.list({
+        auth: key,
+        id: videoId,
+        part: 'snippet, contentDetails, status, statistics',
+        maxResults: 50 // this is the max allowed, unfortunately
+    });
+
+    var videoInfo = res.data.items[0];       // get first video
+
+    //console.log(videoInfo);
+
+    // return all info about the specified video
+    return videoInfo;
+}
+
+//getVideoInfo(key, video0);
+
+/* 
+ * this function returns caption data for the specified video
+ * 
+ * IF THIS FUNCTION IS RETURNING STATUS CODE 429 (too many requests), ENTER 'KILL 1' IN THE REPLIT SHELL
+ */
+async function getCaptions(videoId) {
+
+    // get captions from the video, with error checking for the server response
+    var captions = await getSubtitles({ videoID: videoId, lang: 'en' })
+        .catch(function (error) {
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.log(error.response.data);
+                console.log(error.response.status);
+                console.log(error.response.headers);
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.log(error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.log('Error', error.message);
+            }
+        });
+
+    // use this to convert promise response to a string (to be stored as a string in the database, or written to file)
+    var captionsJson = JSON.stringify(captions, null, 4);
+
+    // the following code can be used to write jsons to a file
+    // fs.writeFile("test.txt", jsonData, function(err) {
+    //     if (err) {
+    //         console.log(err);
+    //     }
+    // });
+
+    //console.log(captionsJson);
+
+    // return captions of the specified video as a stringified JSON
+    return captionsJson;
+}
+
+//getCaptions(video0);
 
 //getChannelInfo(key, rsiChannelId);
 
