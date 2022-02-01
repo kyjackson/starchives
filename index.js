@@ -41,13 +41,13 @@ async function updateDb() {
 
 }
 
-/*
+/* todo figure out how to store datetime info correctly
  * this function gathers all desired playlist info and sends it to the database "playlists" table
  */
 async function updateDbPlaylists(key, channelId) {
 
     // get all playlists
-    var playlists = await getPlaylists(key, rsiChannelId);
+    var playlists = await getPlaylists(key, rsiChannelId, "", []);
     
     // create array of playlist objects for tidy sendoff
     var playlistObjects = [];
@@ -70,11 +70,49 @@ async function updateDbPlaylists(key, channelId) {
         });
     }
 
+    var conn = mysql.createConnection({
+        host: "remotemysql.com",
+        user: "mrNBNedB7e",
+        password: "LlEFgvnh9P",
+        database: "mrNBNedB7e"
+    });
+
+    // for each playlistObject, check if it exists in the database; if not, insert it
+    for (var element of playlistObjects) {
+        // let sql =   
+        //     `IF NOT EXISTS (SELECT * FROM playlists WHERE playlistId = ${element.playlistId} AND title = ${element.title} AND publishDate = ${element.publishDate} AND videoCount = ${element.videoCount}) INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (${element.playlistId}, ${element.title}, ${element.publishDate}, ${element.videoCount})`;
+
+        let sql = "SELECT * FROM playlists WHERE playlistId = ? AND title = ? AND publishDate = ? AND videoCount = ?";
+        let params = [
+            element.playlistId,
+            element.title,
+            element.publishDate,
+            element.videoCount
+        ];
+
+        var query = conn.query(sql, params);
+        //console.log(query.results == undefined);
+
+        if (query.results == undefined) {
+            //console.log("nothing here");
+            sql = "INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (?, ?, ?, ?)";
+            query = conn.query(sql, params);
+            console.log(query.results);
+        }
+
+
+        //let updatePlaylists = await executeSQL(sql);
+    }
+
+    
+    
+    
+
     // return array of playlists correctly formatted for the database
-    return playlistObjects;
+    //return playlistObjects;
 }
 
-//updateDbPlaylists(key);
+//updateDbPlaylists(key, rsiChannelId);
 
 /* 
  * this function gathers all desired info about every playlistItem and sends it to the database 
@@ -83,8 +121,8 @@ async function updateDbPlaylists(key, channelId) {
 async function updateDbPlaylistItems(key, playlistId) {
 
     // get all videos from the specified playlist
-    var playlistItems = await getPlaylistItems(key, playlistId);
-    
+    var playlistItems = await getPlaylistItems(key, playlistId, "", []);
+
     // create array of playlistItem objects for tidy sendoff
     var playlistItemObjects = [];
 
@@ -114,8 +152,7 @@ async function updateDbPlaylistItems(key, playlistId) {
             });
         }
     }
-    //console.log(playlistItemObjects);
-
+    
     // return array of playlistItems correctly formatted for the database
     return playlistItemObjects;
 }
@@ -238,30 +275,48 @@ async function getChannelInfo(key, channelId) {
 /*
  * this function returns an array of all playlists created by the channel and some info about them
  */
-async function getPlaylists(key, channelId) {
+async function getPlaylists(key, channelId, pageToken, pageResults) {
     const res = await youtube.playlists.list({
         auth: key,
         channelId: channelId,
         part: 'snippet, contentDetails',
-        maxResults: 50
+        maxResults: 50,
+        pageToken: pageToken
     });
 
-    var playlists = res.data.items;       // returns all playlists
+    //1. get page results
+    //2. append results to array
+    //3. iterate to next page
+    // repeat
 
-    var playlistsJson = JSON.stringify(playlists, null, 4); // example of converting json to string while keeping formatting
+    // loop through all pages available
+    if (res.data['nextPageToken']) {    // if there's another token, first add all of the current page's items to pageResults, then go to the next page
 
-    //console.log(playlists);
+        for (var item of res.data.items) {
+            pageResults.push(item);
+        }
 
-    // return array of all playlists created by the channel
-    return playlists;
+        return getPlaylists(key, channelId, res.data.nextPageToken, pageResults);
+    } else {    // when we get to the last page, add all of the page's items to pageResults, copy to playlists, and return playlists
+        for (var item of res.data.items) {
+            pageResults.push(item);
+        }
+            
+        var playlists = pageResults;
+        
+        //console.log(playlists);
+        // return array of all playlists created by the channel
+        return playlists;
+    }
+    //var playlistsJson = JSON.stringify(playlists, null, 4); // example of converting json to string while keeping formatting
 }
 
-//getPlaylists(key, rsiChannelId);
+//getPlaylists(key, rsiChannelId, "", []);
 
-/* todo append each page's results after loop
+/*
  * this function returns an array (JSON promise) of all videos in a specified playlist
  */
-async function getPlaylistItems(key, playlistId, pageToken, results) {
+async function getPlaylistItems(key, playlistId, pageToken, pageResults) {
     const res = await youtube.playlistItems.list({
         auth: key,
         playlistId: playlistId,
@@ -270,36 +325,33 @@ async function getPlaylistItems(key, playlistId, pageToken, results) {
         pageToken: pageToken
     });
 
-    var tokens = []
-    
     //1. get page results
     //2. append results to array
     //3. iterate to next page
     // repeat
 
     // loop through all pages available
-    if (res.data['nextPageToken']) {
-        console.log(res.data.nextPageToken);
-        results.push(res.data.nextPageToken);
-        getPlaylistItems(key, playlistId, res.data.nextPageToken, results);
-    } else {
-        console.log(results);
-    }
+    if (res.data['nextPageToken']) {    // if there's another token, first add all of the current page's items to pageResults, then go to the next page
 
-    
-    //if (res.data.items == 50) {
+        for (var item of res.data.items) {
+            pageResults.push(item);
+        }
+
+        return getPlaylistItems(key, playlistId, res.data.nextPageToken, pageResults);
+    } else {    // when we get to the last page, add all of the page's items to pageResults, copy to playlistItems, and return playlistItems
+        for (var item of res.data.items) {
+            pageResults.push(item);
+        }
+            
+        var playlistItems = pageResults;
         
-    //}
+        //console.log(playlistItems);
+        return playlistItems;
+    }
     
-
-    
-    var video1 = res.data.items[0];    // returns first video in the playlist
-
-    // return array of all videos in the specified playlist
-    //return playlistItems;
 }
 
-getPlaylistItems(key, uploads, "", []);
+//getPlaylistItems(key, uploads, "", []);
 
 /* 
  * this function returns all info about a specified video
