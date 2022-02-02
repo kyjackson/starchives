@@ -21,8 +21,17 @@ app.use(express.static("public"));
 const youtube = google.youtube('v3');
 const key = 'AIzaSyD-QWKchiTP5CSzScpbR1kfddR_GGnm0ak';
 const rsiChannelId = 'UCTeLqJq1mXUX5WWoNXLmOIA';
-const uploads = 'UUTeLqJq1mXUX5WWoNXLmOIA'; // for testing: what info can be accessed with this playlist ID?
+const uploads = 'UUTeLqJq1mXUX5WWoNXLmOIA'; // playlistId for the playlist that contains every video on the channel
 const video0 = 'RgmBWBldFZM'; // for testing: can captions be retrieved from this videoId?
+
+// create RemoteMySQL database pool connection
+const pool = mysql.createPool({
+    connectionLimit: 5,
+    host: "remotemysql.com",
+    user: "mrNBNedB7e",
+    password: "LlEFgvnh9P",
+    database: "mrNBNedB7e"
+});
 
 /*
  * Access tree from channel to caption:
@@ -31,221 +40,6 @@ const video0 = 'RgmBWBldFZM'; // for testing: can captions be retrieved from thi
  * 
  * apply youtube timestamp: &t=[minutes]m[seconds]s || &t=[seconds]
  */
-
-//---------------------------------------------DB Update Functions---------------------------------------------------
-
-/* todo
- * this function gathers info from every updateDb function and updates the database with it using SQL
- */
-async function updateDb() {
-
-}
-
-/* todo figure out how to store datetime info correctly
- * this function gathers all desired playlist info and sends it to the database "playlists" table
- */
-async function updateDbPlaylists(key, channelId) {
-
-    // get all playlists
-    var playlists = await getPlaylists(key, rsiChannelId, "", []);
-    
-    // create array of playlist objects for tidy sendoff
-    var playlistObjects = [];
-
-    /*
-     * for each playlist, make a new object representing that playlist with the following data:
-     * 
-     * playlistId   - unique ID of the playlist
-     * title        - title of the playlist
-     * publishDate  - data playlist was published
-     * videoCount   - number of videos in the playlist
-     */
-    // and add each object to the array of playlist objects
-    for (var element of playlists) {
-        playlistObjects.push({
-            playlistId: element.id,
-            title: element.snippet.title,
-            publishDate: element.snippet.publishedAt,
-            videoCount: element.contentDetails.itemCount,
-        });
-    }
-
-    var conn = mysql.createConnection({
-        host: "remotemysql.com",
-        user: "mrNBNedB7e",
-        password: "LlEFgvnh9P",
-        database: "mrNBNedB7e"
-    });
-
-    // for each playlistObject, check if it exists in the database; if not, insert it
-    for (var element of playlistObjects) {
-        // let sql =   
-        //     `IF NOT EXISTS (SELECT * FROM playlists WHERE playlistId = ${element.playlistId} AND title = ${element.title} AND publishDate = ${element.publishDate} AND videoCount = ${element.videoCount}) INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (${element.playlistId}, ${element.title}, ${element.publishDate}, ${element.videoCount})`;
-
-        let sql = "SELECT * FROM playlists WHERE playlistId = ? AND title = ? AND publishDate = ? AND videoCount = ?";
-        let params = [
-            element.playlistId,
-            element.title,
-            element.publishDate,
-            element.videoCount
-        ];
-
-        var query = conn.query(sql, params);
-        //console.log(query.results == undefined);
-
-        if (query.results == undefined) {
-            //console.log("nothing here");
-            sql = "INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (?, ?, ?, ?)";
-            query = conn.query(sql, params);
-            console.log(query.results);
-        }
-
-
-        //let updatePlaylists = await executeSQL(sql);
-    }
-
-    
-    
-    
-
-    // return array of playlists correctly formatted for the database
-    //return playlistObjects;
-}
-
-//updateDbPlaylists(key, rsiChannelId);
-
-/* 
- * this function gathers all desired info about every playlistItem and sends it to the database 
- * "playlistItems" table
- */
-async function updateDbPlaylistItems(key, playlistId) {
-
-    // get all videos from the specified playlist
-    var playlistItems = await getPlaylistItems(key, playlistId, "", []);
-
-    // create array of playlistItem objects for tidy sendoff
-    var playlistItemObjects = [];
-
-    /*
-     * for each playlistItem, make a new object representing that playlistItem with the following data:
-     * 
-     * playlistItemId               (string)    - unique ID of the playlistItem
-     * playlistItemTitle            (string)    - title of the playlistItem
-     * playlistItemPublishDate      (datetime)  - date the video was added to the playlist
-     * playlistItemDescription      (string)    - description of the playlistItem
-     * playlistId                   (string)    - unique ID of the playlist associated with the playlistItem
-     * videoId                      (string)    - unique ID of the video associated with the playlistItem
-     * videoPublishDate             (datetime)  - publish date of the video associated with the playlistItem
-     */
-    // and add each object to the array of playlist objects
-    for (var element of playlistItems) {
-        // make sure the playlistItem is a video, otherwise we don't want it
-        if (element.snippet.resourceId.kind == "youtube#video") {
-            playlistItemObjects.push({
-                playlistItemId: element.id,
-                playlistItemTitle: element.snippet.title,
-                playlistItemPublishDate: element.snippet.publishedAt,
-                playlistItemDescription: element.snippet.description,
-                playlistId: element.snippet.playlistId,
-                videoId: element.snippet.resourceId.videoId,
-                videoPublishDate: element.contentDetails.videoPublishedAt
-            });
-        }
-    }
-    
-    // return array of playlistItems correctly formatted for the database
-    return playlistItemObjects;
-}
-
-//updateDbPlaylistItems(key, uploads);
-
-/* todo
- * this function gathers all desired info about every video and sends it to the database "videos" table
- */
-async function updateDbVideos(key) {
-
-    // get all playlistItems from "uploads" playlist
-    var playlistItems = await getPlaylistItems(key, uploads);
-    
-    // create array of playlistItem objects to easily get videoId of each video
-    // var playlistItemObjects = [];
-    // for (var playlistItem of playlistItems) {
-    //     if (playlistItem.snippet.resourceId.kind == "youtube#video") {
-    //         playlistItemObjects.push({
-    //             videoId: playlistItem.snippet.resourceId.videoId,
-    //         });
-    //     }
-    // }
-    
-    // create array of video objects for tidy sendoff
-    var videoObjects = [];
-
-    // for each video, make a new object representing that video with the specific data we want
-    // and add it to the array of video objects
-    for (var element of playlistItems) {
-        console.log("video");
-        if (element.snippet.resourceId.kind == "youtube#video") {
-            //console.log(element.videoId);
-            //var videoInfo = await getVideoInfo(key, element.videoId);
-            // videoObjects.push({
-            //     videoId: videoInfo.id,
-            //     // title: element.snippet.title,
-            //     // publishDate: element.snippet.publishedAt,
-            //     // videoCount: element.contentDetails.itemCount,
-            //     // videos: []
-            // });
-        }   
-    }
-    
-
-    //todo: retrieve all videos from "uploads" playlist
-            // 1. use getPlaylistItems to get all videos from "uploads" playlist
-
-    // return array of videos correctly formatted for the database
-    return videoObjects;
-}
-
-//updateDbVideos(key);
-
-/* todo
- * this function gathers caption info for all videos and sends it to the database "captions" table
- */
-async function updateDbCaptions(key, playlistId) {
-
-    // get all videos from "uploads" playlist
-    var videos = await getPlaylistItems(key, playlistId);
-    
-    // create array of caption objects for tidy sendoff
-    var captionObjects = [];
-
-    // for each caption track, make a new object associating the track with the correct videoId
-    // and add it to the array of video objects
-    for (var element of videos) {
-        videoObjects.push({
-            // playlistId: element.id,
-            // title: element.snippet.title,
-            // publishDate: element.snippet.publishedAt,
-            // videoCount: element.contentDetails.itemCount,
-            // videos: []
-        });
-    }
-    //console.log(videoObjects);
-
-    //todo: retrieve captions for all videos on the channel
-            // 1. get list of all videos using getPlaylistItems and "uploads" playlistId
-            // 2. 
-
-    // var videos[] = getVideos(playlistId);
-
-    var videoId = video0;
-    
-    //todo: get captions of each video
-    var captions = await getSubtitles({videoID: video0});
-    //console.log(captions);
-
-    // return array of videos correctly formatted for the database
-    return videoObjects;
-}
 
 //---------------------------------------------API data acquisition functions---------------------------------------------------
 
@@ -419,9 +213,246 @@ async function getCaptions(videoId) {
 
 //getCaptions(video0);
 
-//getChannelInfo(key, rsiChannelId);
+//---------------------------------------------DB Update Functions---------------------------------------------------
 
-//getPlaylists(key, rsiChannelId);
+/* todo
+ * this function gathers info from every updateDb function and updates the database with it using SQL
+ */
+async function updateDb() {
+
+    // call all db update functions at the same time
+    updateDbPlaylists(key, rsiChannelId);
+    
+    // updateDbPlaylistItems...
+}
+
+updateDb();
+
+/*  
+ * this function gathers all desired playlist info and sends it to the database "playlists" table
+ */
+async function updateDbPlaylists(key, channelId) {
+
+    // get all playlists
+    var playlists = await getPlaylists(key, rsiChannelId, "", []);
+    
+    // create array of playlist objects for tidy sendoff
+    var playlistObjects = [];
+
+    /*
+     * for each playlist, make a new object representing that playlist with the following data:
+     * 
+     * playlistId   - unique ID of the playlist
+     * title        - title of the playlist
+     * publishDate  - data playlist was published
+     * videoCount   - number of videos in the playlist
+     */
+    // and add each object to the array of playlist objects
+    for (var element of playlists) {
+        var datetime = element.snippet.publishedAt.replace("T", " ");
+        datetime = datetime.replace("Z", "");
+
+        playlistObjects.push({
+            playlistId: element.id,
+            title: element.snippet.title,
+            publishDate: datetime,
+            videoCount: element.contentDetails.itemCount,
+        });   
+    }
+
+    // connect to the database connection pool before performing SQL operations
+    pool.getConnection(function(err, conn) {
+        if (err) throw (err);
+        console.log("Connected to database connection pool. Updating playlists..."); // confirm connection
+
+        // for each playlistObject, check if it exists in the database; if not, insert it
+        for (let element of playlistObjects) {
+
+            // first check if the playlist is already in the database
+            let sql = "SELECT * FROM playlists WHERE playlistId = ?";
+            let params = [
+                element.playlistId
+            ];
+
+            let query = conn.query(sql, params, function(err, rows, fields) {
+                if (err) throw (err); 
+
+                //if the playlist doesn't exist, add it
+                if(!rows[0]) {
+                    let sql = "INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (?, ?, ?, ?)";
+                    let params = [
+                        element.playlistId,
+                        element.title,
+                        element.publishDate,
+                        element.videoCount
+                    ];
+
+                    conn.query(sql, params, function(err, rows, fields) {
+                        if (err) throw (err);
+
+                        // confirm playlist was inserted
+                        console.log("playlist added");
+                    });
+                } else { // if it does exist, update it
+                    let sql = "UPDATE playlists SET title = ?, publishDate = ?, videoCount = ? WHERE playlistId = ?";
+                    let params = [
+                        element.title,
+                        element.publishDate,
+                        element.videoCount,
+                        element.playlistId
+                    ];
+
+                    conn.query(sql, params, function(err, rows, fields) {
+                        if (err) throw (err);
+
+                        // confirm playlist was updated
+                        console.log("playlist updated");
+                    });
+                }     
+            });
+        }
+
+        // release pool connection when finished updating 
+        conn.release();
+    });
+}
+
+//updateDbPlaylists(key, rsiChannelId);
+
+/* todo update with sql
+ * this function gathers all desired info about every playlistItem and sends it to the database 
+ * "playlistItems" table
+ */
+async function updateDbPlaylistItems(key, playlistId) {
+
+    // get all videos from the specified playlist
+    var playlistItems = await getPlaylistItems(key, playlistId, "", []);
+
+    // create array of playlistItem objects for tidy sendoff
+    var playlistItemObjects = [];
+
+    /*
+     * for each playlistItem, make a new object representing that playlistItem with the following data:
+     * 
+     * playlistItemId               (string)    - unique ID of the playlistItem
+     * playlistItemTitle            (string)    - title of the playlistItem
+     * playlistItemPublishDate      (datetime)  - date the video was added to the playlist
+     * playlistItemDescription      (string)    - description of the playlistItem
+     * playlistId                   (string)    - unique ID of the playlist associated with the playlistItem
+     * videoId                      (string)    - unique ID of the video associated with the playlistItem
+     * videoPublishDate             (datetime)  - publish date of the video associated with the playlistItem
+     */
+    // and add each object to the array of playlist objects
+    for (var element of playlistItems) {
+        // make sure the playlistItem is a video, otherwise we don't want it
+        //var datetime = element.snippet.publishedAt
+        if (element.snippet.resourceId.kind == "youtube#video") {
+            playlistItemObjects.push({
+                playlistItemId: element.id,
+                playlistItemTitle: element.snippet.title,
+                playlistItemPublishDate: element.snippet.publishedAt,
+                playlistItemDescription: element.snippet.description,
+                playlistId: element.snippet.playlistId,
+                videoId: element.snippet.resourceId.videoId,
+                videoPublishDate: element.contentDetails.videoPublishedAt
+            });
+        }
+    }
+    
+    // return array of playlistItems correctly formatted for the database
+    return playlistItemObjects;
+}
+
+//updateDbPlaylistItems(key, uploads);
+
+/* todo update with sql
+ * this function gathers all desired info about every video and sends it to the database "videos" table
+ */
+async function updateDbVideos(key) {
+
+    // get all playlistItems from "uploads" playlist
+    var playlistItems = await getPlaylistItems(key, uploads);
+    
+    // create array of playlistItem objects to easily get videoId of each video
+    // var playlistItemObjects = [];
+    // for (var playlistItem of playlistItems) {
+    //     if (playlistItem.snippet.resourceId.kind == "youtube#video") {
+    //         playlistItemObjects.push({
+    //             videoId: playlistItem.snippet.resourceId.videoId,
+    //         });
+    //     }
+    // }
+    
+    // create array of video objects for tidy sendoff
+    var videoObjects = [];
+
+    // for each video, make a new object representing that video with the specific data we want
+    // and add it to the array of video objects
+    for (var element of playlistItems) {
+        console.log("video");
+        if (element.snippet.resourceId.kind == "youtube#video") {
+            //console.log(element.videoId);
+            //var videoInfo = await getVideoInfo(key, element.videoId);
+            // videoObjects.push({
+            //     videoId: videoInfo.id,
+            //     // title: element.snippet.title,
+            //     // publishDate: element.snippet.publishedAt,
+            //     // videoCount: element.contentDetails.itemCount,
+            //     // videos: []
+            // });
+        }   
+    }
+    
+
+    //todo: retrieve all videos from "uploads" playlist
+            // 1. use getPlaylistItems to get all videos from "uploads" playlist
+
+    // return array of videos correctly formatted for the database
+    return videoObjects;
+}
+
+//updateDbVideos(key);
+
+/* todo update with sql
+ * this function gathers caption info for all videos and sends it to the database "captions" table
+ */
+async function updateDbCaptions(key, playlistId) {
+
+    // get all videos from "uploads" playlist
+    var videos = await getPlaylistItems(key, playlistId);
+    
+    // create array of caption objects for tidy sendoff
+    var captionObjects = [];
+
+    // for each caption track, make a new object associating the track with the correct videoId
+    // and add it to the array of video objects
+    for (var element of videos) {
+        videoObjects.push({
+            // playlistId: element.id,
+            // title: element.snippet.title,
+            // publishDate: element.snippet.publishedAt,
+            // videoCount: element.contentDetails.itemCount,
+            // videos: []
+        });
+    }
+    //console.log(videoObjects);
+
+    //todo: retrieve captions for all videos on the channel
+            // 1. get list of all videos using getPlaylistItems and "uploads" playlistId
+            // 2. fetch caption track for each video
+            // 3. link caption track with correct videoId
+
+    // var videos[] = getVideos(playlistId);
+
+    var videoId = video0;
+    
+    //todo: get captions of each video
+    var captions = await getSubtitles({videoID: video0});
+    //console.log(captions);
+
+    // return array of videos correctly formatted for the database
+    return videoObjects;
+}
 
 //---------------------------------------------Routes---------------------------------------------------
 
@@ -499,24 +530,22 @@ async function executeSQL(sql, params) {
 // access the database using a connection pool
 function dbConnection() {
 
-  // create RemoteMySQL database pool connection
-  const pool = mysql.createPool({
-    connectionLimit: 1000,
-    host: "remotemysql.com",
-    user: "mrNBNedB7e",
-    password: "LlEFgvnh9P",
-    database: "mrNBNedB7e"
-  });
+    // create RemoteMySQL database pool connection
+    const pool = mysql.createPool({
+        connectionLimit: 5,
+        host: "remotemysql.com",
+        user: "mrNBNedB7e",
+        password: "LlEFgvnh9P",
+        database: "mrNBNedB7e"
+    });
 
-  // confirm connection has been established
-  pool.getConnection(function(err) {
-    if (err) {
-      console.log(err)
-    }
-    console.log("Connected to pool database.");
-  });
+    // confirm connection has been established
+    pool.getConnection(function(err) {
+        if (err) throw (err);
+        console.log("Connected to database pool.");
+    });
 
-  return pool;
+    return pool;
 }
 
 
