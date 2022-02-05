@@ -260,13 +260,19 @@ async function updateDbPlaylists(key, channelId) {
         });   
     }
 
+    let opCounts = {
+        updates: 0, // number of playlists updated
+        inserts: 0, // number of playlists inserted
+        total: 0
+    };
+
     // connect to the database connection pool before performing SQL operations
-    pool.getConnection(function(err, conn) {
+    await pool.getConnection(async function(err, conn) {
         if (err) throw (err);
         console.log("Connected to database connection pool. Updating playlists..."); // confirm connection
 
         // for each playlistObject, check if it exists in the database; if not, insert it
-        for (let element of playlistObjects) {
+        let playlistPromiseArray = playlistObjects.map(async function (element) {   // promisify each SQL execution so we can easily keep track of the quantity
 
             // first check if the playlist is already in the database
             let sql = "SELECT * FROM playlists WHERE playlistId = ?";
@@ -274,43 +280,80 @@ async function updateDbPlaylists(key, channelId) {
                 element.playlistId
             ];
 
-            let query = conn.query(sql, params, function(err, rows, fields) {
-                if (err) throw (err); 
+            let selectQuery = new Promise(function (resolve) {
+                conn.query(sql, params, async function(err, rows, fields) {
+                    if (err) throw (err); 
 
-                //if the playlist doesn't exist, add it
-                if(!rows[0]) {
-                    let sql = "INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (?, ?, ?, ?)";
-                    let params = [
-                        element.playlistId,
-                        element.title,
-                        element.publishDate,
-                        element.videoCount
-                    ];
+                    //if the playlist doesn't exist, add it
+                    if(!rows[0]) {
+                        let sql = "INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (?, ?, ?, ?)";
+                        let params = [
+                            element.playlistId,
+                            element.title,
+                            element.publishDate,
+                            element.videoCount
+                        ];
 
-                    conn.query(sql, params, function(err, rows, fields) {
-                        if (err) throw (err);
+                        let insertQuery = new Promise(async function(resolve) {
+                            conn.query(sql, params, function(err, rows, fields) {
+                                if (err) throw (err);
 
-                        // confirm playlist was inserted
-                        console.log("playlist added");
-                    });
-                } else { // if it does exist, update it
-                    let sql = "UPDATE playlists SET title = ?, publishDate = ?, videoCount = ? WHERE playlistId = ?";
-                    let params = [
-                        element.title,
-                        element.publishDate,
-                        element.videoCount,
-                        element.playlistId
-                    ];
+                                // increment tally of inserts
+                                resolve(opCounts.inserts++);
+                            });
+                        });
 
-                    conn.query(sql, params, function(err, rows, fields) {
-                        if (err) throw (err);
+                        // wait for the insert query to complete before proceeding to the next element
+                        await insertQuery;
+                    } else { // if it does exist, update it
+                        let sql = "UPDATE playlists SET title = ?, publishDate = ?, videoCount = ? WHERE playlistId = ?";
+                        let params = [
+                            element.title,
+                            element.publishDate,
+                            element.videoCount,
+                            element.playlistId
+                        ];
 
-                        // confirm playlist was updated
-                        console.log("playlist updated");
-                    });
-                }     
+                        let updateQuery = new Promise(async function(resolve) {   
+                            conn.query(sql, params, function(err, rows, fields) {
+                                if (err) throw (err);
+                                
+                                // increment tally of updates
+                                resolve(opCounts.updates++);
+                            }); 
+                        });
+
+                        // wait for the update query to complete before proceeding to the next element
+                        await updateQuery;   
+                    }
+
+                    // resolve the wrapped select query before proceeding to the next element
+                    resolve(opCounts);
+
+                    // compactly log playlists as they're iterated through
+                    opCounts.total++;
+                    process.stdout.cursorTo(0);
+                    process.stdout.write(`Checking playlist ${opCounts.total}...`);
+                });
             });
-        }
+
+            // wait for the select query to complete before proceeding to the next element
+            await selectQuery;
+            return selectQuery; // the playlistPromiseArray gets filled with the return values of each selectQuery
+
+            // console.log("update"); *for debugging*
+
+            // resolve the outermost promise before adding it to the array
+            resolve(opCounts);
+        }); 
+
+        // wait for all SQL operations to complete, then log the amount of each type that occurred
+        let promises = Promise.all(playlistPromiseArray);
+        await promises;
+        console.log(`\nUpdate complete!`);
+        console.log(`Playlists inserted: ${opCounts.inserts}`);
+        console.log(`Playlists updated: ${opCounts.updates}`);
+        console.log(`Total playlists modified: ${opCounts.total}`);
 
         // release pool connection when finished updating 
         conn.release();
