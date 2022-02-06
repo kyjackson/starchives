@@ -219,10 +219,17 @@ async function getCaptions(videoId) {
  * this function gathers info from every updateDb function and updates the database with it using SQL
  */
 async function updateDb() {
+    const timer = ms => new Promise(res => setTimeout(res, ms));
 
     // call all db update functions at the same time
+
     updateDbPlaylists(key, rsiChannelId);
-    
+
+    await timer(3000);
+
+    updateDbPlaylistItems(key, uploads);
+
+    await timer(3000);
     // updateDbPlaylistItems...
 }
 
@@ -260,104 +267,38 @@ async function updateDbPlaylists(key, channelId) {
         });   
     }
 
-    let opCounts = {
-        updates: 0, // number of playlists updated
-        inserts: 0, // number of playlists inserted
-        total: 0
-    };
+    // determine what queries need to be executed and the values they should carry
+    let sql = {
+        select: {
+            query: "SELECT * FROM playlists WHERE playlistId = ?",
+            params: [
+                "playlistId"
+            ]
+        },
 
-    // connect to the database connection pool before performing SQL operations
-    await pool.getConnection(async function(err, conn) {
-        if (err) throw (err);
-        console.log("Connected to database connection pool. Updating playlists..."); // confirm connection
+        insert: {
+            query: "INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (?, ?, ?, ?)",
+            params: [
+                "playlistId",
+                "title",
+                "publishDate",
+                "videoCount"
+            ]
+        },
 
-        // for each playlistObject, check if it exists in the database; if not, insert it
-        let playlistPromiseArray = playlistObjects.map(async function (element) {   // promisify each SQL execution so we can easily keep track of the quantity
+        update: {
+            query: "UPDATE playlists SET title = ?, publishDate = ?, videoCount = ? WHERE playlistId = ?",
+            params: [
+                "title",
+                "publishDate",
+                "videoCount",
+                "playlistId"
+            ]
+        }
+    }
 
-            // first check if the playlist is already in the database
-            let sql = "SELECT * FROM playlists WHERE playlistId = ?";
-            let params = [
-                element.playlistId
-            ];
-
-            let selectQuery = new Promise(function (resolve) {
-                conn.query(sql, params, async function(err, rows, fields) {
-                    if (err) throw (err); 
-
-                    //if the playlist doesn't exist, add it
-                    if(!rows[0]) {
-                        let sql = "INSERT INTO playlists (playlistId, title, publishDate, videoCount) VALUES (?, ?, ?, ?)";
-                        let params = [
-                            element.playlistId,
-                            element.title,
-                            element.publishDate,
-                            element.videoCount
-                        ];
-
-                        let insertQuery = new Promise(async function(resolve) {
-                            conn.query(sql, params, function(err, rows, fields) {
-                                if (err) throw (err);
-
-                                // increment tally of inserts
-                                resolve(opCounts.inserts++);
-                            });
-                        });
-
-                        // wait for the insert query to complete before proceeding to the next element
-                        await insertQuery;
-                    } else { // if it does exist, update it
-                        let sql = "UPDATE playlists SET title = ?, publishDate = ?, videoCount = ? WHERE playlistId = ?";
-                        let params = [
-                            element.title,
-                            element.publishDate,
-                            element.videoCount,
-                            element.playlistId
-                        ];
-
-                        let updateQuery = new Promise(async function(resolve) {   
-                            conn.query(sql, params, function(err, rows, fields) {
-                                if (err) throw (err);
-                                
-                                // increment tally of updates
-                                resolve(opCounts.updates++);
-                            }); 
-                        });
-
-                        // wait for the update query to complete before proceeding to the next element
-                        await updateQuery;   
-                    }
-
-                    // resolve the wrapped select query before proceeding to the next element
-                    resolve(opCounts);
-
-                    // compactly log playlists as they're iterated through
-                    opCounts.total++;
-                    process.stdout.cursorTo(0);
-                    process.stdout.write(`Checking playlist ${opCounts.total}...`);
-                });
-            });
-
-            // wait for the select query to complete before proceeding to the next element
-            await selectQuery;
-            return selectQuery; // the playlistPromiseArray gets filled with the return values of each selectQuery
-
-            // console.log("update"); *for debugging*
-
-            // resolve the outermost promise before adding it to the array
-            resolve(opCounts);
-        }); 
-
-        // wait for all SQL operations to complete, then log the amount of each type that occurred
-        let promises = Promise.all(playlistPromiseArray);
-        await promises;
-        console.log(`\nUpdate complete!`);
-        console.log(`Playlists inserted: ${opCounts.inserts}`);
-        console.log(`Playlists updated: ${opCounts.updates}`);
-        console.log(`Total playlists modified: ${opCounts.total}`);
-
-        // release pool connection when finished updating 
-        conn.release();
-    });
+    // update the table with the correctly formatted objects using SQL
+    await tableUpdate("playlists", playlistObjects, sql);
 }
 
 //updateDbPlaylists(key, rsiChannelId);
@@ -370,6 +311,7 @@ async function updateDbPlaylistItems(key, playlistId) {
 
     // get all videos from the specified playlist
     var playlistItems = await getPlaylistItems(key, playlistId, "", []);
+    //console.log(playlistItems);
 
     // create array of playlistItem objects for tidy sendoff
     var playlistItemObjects = [];
@@ -387,23 +329,174 @@ async function updateDbPlaylistItems(key, playlistId) {
      */
     // and add each object to the array of playlist objects
     for (var element of playlistItems) {
+        let datetime = element.snippet.publishedAt.replace("T", " ");
+        datetime = datetime.replace("Z", "");
+
         // make sure the playlistItem is a video, otherwise we don't want it
-        //var datetime = element.snippet.publishedAt
         if (element.snippet.resourceId.kind == "youtube#video") {
             playlistItemObjects.push({
                 playlistItemId: element.id,
                 playlistItemTitle: element.snippet.title,
-                playlistItemPublishDate: element.snippet.publishedAt,
-                playlistItemDescription: element.snippet.description,
+                playlistItemPublishDate: datetime,
+                //playlistItemDescription: element.snippet.description,
                 playlistId: element.snippet.playlistId,
-                videoId: element.snippet.resourceId.videoId,
-                videoPublishDate: element.contentDetails.videoPublishedAt
+                videoId: element.snippet.resourceId.videoId
+                //videoPublishDate: element.contentDetails.videoPublishedAt
             });
         }
     }
+
+    // determine what queries need to be executed and the values they should carry
+    let sql = {
+        select: {
+            query: "SELECT * FROM playlistItems WHERE playlistItemId = ?",
+            params: [
+                "playlistItemId"
+            ]
+        },
+
+        insert: {
+            query: "INSERT INTO playlistItems (playlistItemId, playlistItemTitle, playlistItemPublishDate, playlistId, videoId) VALUES (?, ?, ?, ?, ?)",
+            params: [
+                "playlistItemId",
+                "playlistItemTitle",
+                "playlistItemPublishDate",
+                "playlistId",
+                "videoId"
+            ]
+        },
+
+        update: {
+            query: "UPDATE playlistItems SET playlistItemTitle = ?, playlistItemPublishDate = ?, playlistId = ?, videoId = ? WHERE playlistItemId = ?",
+            params: [
+                "playlistItemTitle",
+                "playlistItemPublishDate",
+                "playlistId",
+                "videoId",
+                "playlistItemId"
+            ]
+        }
+    }
+
+    // update the table with the correctly formatted objects using SQL
+    await tableUpdate("playlistItems", playlistItemObjects, sql);
+
+    // let opCounts = {
+    //     updates: 0,                         // number of playlistItems updated
+    //     inserts: 0,                         // number of playlistItems inserted
+    //     indexSelect: 0,                     // index of SQL select operations
+    //     indexModify: 0,                     // index of SQL insert/update operations
+    //     total: playlistItemObjects.length   // total number of playlistItems fetched by Youtube Data API
+    // };
+
+    // // connect to the database connection pool before performing SQL operations
+    // await pool.getConnection(async function(err, conn) {
+    //     if (err) throw (err);
+    //     console.log("Connected to database connection pool. Updating playlistItems..."); // confirm connection
+
+    //     // for each playlistItemObject, check if it exists in the database; if not, insert it
+    //     let playlistItemPromiseArray = playlistItemObjects.map(async function (element) {   // promisify each SQL execution so we can easily keep track of the quantity
+
+    //         // first check if the playlist is already in the database
+    //         let sql = "SELECT * FROM playlistItems WHERE playlistItemId = ?";
+    //         let params = [
+    //             element.playlistItemId
+    //         ];
+    //         //console.log("select sql declared");
+
+    //         let selectQuery = new Promise(function (resolve) {
+    //             conn.query(sql, params, async function(err, rows, fields) {
+    //                 if (err) throw (err); 
+    //                 //console.log(`item ${opCounts.index++}`);
+
+    //                 // compactly log playlistItems as they're iterated through
+    //                 opCounts.indexSelect++;
+    //                 process.stdout.cursorTo(0);
+    //                 process.stdout.write(`Checking playlistItem ${opCounts.indexSelect} of ${opCounts.total}...`);
+
+    //                 //if the playlistItem doesn't exist, add it
+    //                 if(!rows[0]) {
+    //                     let sql = "INSERT INTO playlistItems (playlistItemId, playlistItemTitle, playlistItemPublishDate, playlistId, videoId) VALUES (?, ?, ?, ?, ?)";
+    //                     let params = [
+    //                         element.playlistItemId,
+    //                         element.playlistItemTitle,
+    //                         element.playlistItemPublishDate,
+    //                         element.playlistId,
+    //                         element.videoId
+    //                     ];
+                        
+    //                     let insertQuery = new Promise(async function(resolve) {
+    //                         conn.query(sql, params, function(err, rows, fields) {
+    //                             if (err) throw (err);
+
+    //                             // increment tally of inserts
+    //                             resolve(opCounts.inserts++);
+    //                         });
+    //                     });
+
+    //                     // wait for the insert query to complete before proceeding to the next element
+    //                     await insertQuery;
+    //                 } else { // if it does exist, update it
+    //                     let sql = "UPDATE playlistItems SET playlistItemTitle = ?, playlistItemPublishDate = ?, playlistId = ?, videoId = ? WHERE playlistItemId = ?";
+    //                     let params = [
+    //                         element.playlistItemTitle,
+    //                         element.playlistItemPublishDate,
+    //                         element.playlistId,
+    //                         element.videoId,
+    //                         element.playlistItemId
+    //                     ];
+
+    //                     let updateQuery = new Promise(async function(resolve) {   
+    //                         conn.query(sql, params, function(err, rows, fields) {
+    //                             if (err) throw (err);
+                                
+    //                             // increment tally of updates
+    //                             resolve(opCounts.updates++);
+    //                         }); 
+    //                     });
+
+    //                     // wait for the update query to complete before proceeding to the next element
+    //                     await updateQuery;   
+    //                 }
+
+    //                 // resolve the wrapped select query before proceeding to the next element
+    //                 resolve(opCounts);
+
+    //                 // compactly log playlists as they're iterated through
+    //                 process.stdout.clearLine();
+    //                 opCounts.indexModify++;
+    //                 process.stdout.cursorTo(0);
+    //                 process.stdout.write(`Processing playlistItem ${opCounts.indexModify} of ${opCounts.total}...`);
+    //             });
+    //         });
+
+    //         // wait for the select query to complete before proceeding to the next element
+    //         await selectQuery;
+    //         return selectQuery; // the playlistItemPromiseArray gets filled with the return values of each selectQuery
+
+    //         // console.log("update"); *for debugging*
+
+    //         // resolve the outermost promise before adding it to the array
+    //         resolve(opCounts);
+    //     }); 
+
+    //     // wait for all SQL operations to complete, then log the amount of each type that occurred
+    //     let promises = Promise.all(playlistItemPromiseArray);
+    //     await promises;
+    //     process.stdout.clearLine();
+    //     process.stdout.cursorTo(0);
+    //     console.log(`Update complete!`);
+    //     console.log(`PlaylistItems inserted: ${opCounts.inserts}`);
+    //     console.log(`PlaylistItems updated: ${opCounts.updates}`);
+    //     console.log(`Total playlistItems modified: ${opCounts.total}\n`);
+
+    //     // release pool connection when finished updating 
+    //     conn.release();
+    // });
     
+    //console.log(playlistItemObjects);
     // return array of playlistItems correctly formatted for the database
-    return playlistItemObjects;
+    // return playlistItemObjects;
 }
 
 //updateDbPlaylistItems(key, uploads);
@@ -504,10 +597,14 @@ app.get('/', (req, res) => {
   res.render('home')
 });
 
+
+
 // library route
 app.get('/library', (req, res) => {
   res.render('library')
 });
+
+
 
 // about route
 app.get('/about', (req, res) => {
@@ -531,6 +628,8 @@ app.get('/search', async (req, res) => {
     "categories": categories,
   })
 });
+
+
 
 //search results route
 app.get("/results", async function(req, res) {
@@ -556,7 +655,7 @@ app.get("/results", async function(req, res) {
 
 //---------------------------------------------Database and Query Setup---------------------------------------------------
 
-//function for querying the database 
+// template function for querying the database 
 async function executeSQL(sql, params) {
 
   return new Promise(function(resolve, reject) {
@@ -570,7 +669,9 @@ async function executeSQL(sql, params) {
 
 }
 
-// access the database using a connection pool
+
+
+// template function for accessing the database using a connection pool
 function dbConnection() {
 
     // create RemoteMySQL database pool connection
@@ -589,6 +690,124 @@ function dbConnection() {
     });
 
     return pool;
+}
+
+
+
+/*
+ * this function updates any database table using the table name, an array of objects correctly formatted for the table,
+ * and an array of SQL objects consisting of queries and parameters
+ */
+async function tableUpdate(tableName, dbReadyArray, sql) {
+
+    let metadata = {
+        updates: 0,                     // number of rows updated
+        inserts: 0,                     // number of rows inserted
+        indexSelect: 0,                 // index of SQL select operations
+        indexModify: 0,                 // index of SQL insert/update operations
+        total: dbReadyArray.length      // total number of objects fetched by Youtube Data API
+    };
+
+    // connect to the database connection pool before performing SQL operations
+    await pool.getConnection(async function(err, conn) {
+        if (err) throw (err);
+        console.log(`\nConnected to database connection pool. Updating ${tableName}...`); // confirm connection
+
+        // for each object, check if it exists in the database; if not, insert it
+        let promiseArray = dbReadyArray.map(async function (element) {   // promisify each SQL execution so we can easily keep track of the quantity
+
+            // first check if the object is already in the database
+            let query = sql.select.query;
+            let params = [];
+            for (let key of sql.select.params) {
+                params.push(element[key]);
+            }
+
+            let selectQuery = new Promise(function (resolve) {
+                pool.query(query, params, async function(err, rows, fields) {
+                    if (err) throw (err); 
+
+                    // compactly log objects as they're iterated through
+                    metadata.indexSelect++;
+                    process.stdout.cursorTo(0);
+                    process.stdout.write(`Checking item ${metadata.indexSelect} of ${metadata.total}...`);
+                    if (metadata.indexSelect == metadata.total) {
+                        process.stdout.clearLine();
+                    }
+
+                    //if the object doesn't exist, add it
+                    if(!rows[0]) {
+                        let query = sql.insert.query;
+                        let params = [];
+                        for (let key of sql.insert.params) {
+                            params.push(element[key]);
+                        }
+
+                        let insertQuery = new Promise(async function(resolve) {
+                            pool.query(query, params, function(err, rows, fields) {
+                                if (err) throw (err);
+
+                                // increment tally of inserts
+                                resolve(metadata.inserts++);
+                            });
+                        });
+
+                        // wait for the insert query to complete before proceeding to the next element
+                        await insertQuery;
+                    } else { // if it does exist, update it
+                        let query = sql.update.query;
+                        let params = [];
+                        for (let key of sql.update.params) {
+                            params.push(element[key]);
+                        }
+
+                        let updateQuery = new Promise(async function(resolve) {   
+                            pool.query(query, params, function(err, rows, fields) {
+                                if (err) throw (err);
+                                
+                                // increment tally of updates
+                                resolve(metadata.updates++);
+                            }); 
+                        });
+
+                        // wait for the update query to complete before proceeding to the next element
+                        await updateQuery;   
+                    }
+
+                    // resolve the select query before proceeding to the next element
+                    resolve(metadata.indexModify++);
+
+                    // compactly log playlists as they're iterated through
+                    process.stdout.cursorTo(0);
+                    process.stdout.write(`Processing item ${metadata.indexModify} of ${metadata.total}...`);
+                });
+            });
+
+            // wait for the select query to complete before proceeding to the next element
+            await selectQuery;
+            return selectQuery; // the playlistPromiseArray gets filled with the return values of each selectQuery
+
+            // console.log("update"); *for debugging*
+
+            // resolve the outermost promise before adding it to the array
+            resolve(metadata);
+        }); 
+
+        // wait for all SQL operations to complete, then log the amount of each type that occurred
+        let promises = Promise.all(promiseArray);
+        await promises;
+        
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
+        console.log();
+        console.log(`Update complete!`);
+        console.log(`${tableName} inserted: ${metadata.inserts}`);
+        console.log(`${tableName} updated: ${metadata.updates}`);
+        console.log(`Total ${tableName} modified: ${metadata.total}\n`);
+
+        // release pool connection when finished updating 
+        conn.release();
+    });
 }
 
 
