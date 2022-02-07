@@ -33,6 +33,11 @@ const pool = mysql.createPool({
     database: "mrNBNedB7e"
 });
 
+// start server
+app.listen(3000, () => {
+  console.log('server started');
+});
+
 /*
  * Access tree from channel to caption:
  * 
@@ -223,13 +228,15 @@ async function updateDb() {
 
     // call all db update functions at the same time
 
-    updateDbPlaylists(key, rsiChannelId);
+    //updateDbPlaylists(key, rsiChannelId);
+    //await timer(3000);
 
-    await timer(3000);
+    // await updateDbPlaylistItems(key, uploads);
+    // await timer(10000);
 
-    updateDbPlaylistItems(key, uploads);
+    updateDbVideos(key);
+    await timer(10000);
 
-    await timer(3000);
     // updateDbPlaylistItems...
 }
 
@@ -298,22 +305,45 @@ async function updateDbPlaylists(key, channelId) {
     }
 
     // update the table with the correctly formatted objects using SQL
-    await tableUpdate("playlists", playlistObjects, sql);
+    return new Promise(async function (resolve) {
+        await tableUpdate("playlists", playlistObjects, sql);
+        resolve(console.log("Update complete"));
+    });
+    
 }
 
 //updateDbPlaylists(key, rsiChannelId);
 
-/* todo update with sql
+/* todo get all playlistitems on channel instead of just in uploads playlist
  * this function gathers all desired info about every playlistItem and sends it to the database 
  * "playlistItems" table
  */
 async function updateDbPlaylistItems(key, playlistId) {
 
-    // get all videos from the specified playlist
-    var playlistItems = await getPlaylistItems(key, playlistId, "", []);
-    //console.log(playlistItems);
+    // create array to store playlistItems from every playlist; store all uploads in it instead if specified
+    var playlistItemArray = await getPlaylistItems(key, uploads, "", []); // get every playlistItem in uploads playlist first
 
-    // create array of playlistItem objects for tidy sendoff
+    // if (playlistId == uploads) {
+    //     console.log("Fetching all playlistItems (uploads only)...");
+    //     playlistItemArray = await getPlaylistItems(key, uploads, "", []); // get every playlistItem in uploads playlist
+    //     console.log(`${playlistItemArray.length} playlistItems fetched (uploads only).`);
+    // } else {
+        // get all playlists first
+    var playlists = await getPlaylists(key, rsiChannelId, "", []);
+
+    console.log("Fetching all playlistItems...");
+    for await (let playlist of playlists) {
+        var playlistItems = await getPlaylistItems(key, playlist.id, "", []); // get every playlistItem in each playlist
+
+        for await (let playlistItem of playlistItems) {
+            playlistItemArray.push(await playlistItem); // add all the playlistItems to one big array
+        }
+    }
+
+    console.log(`${playlistItemArray.length} playlistItems fetched.`);
+    // }
+
+    // create new array of playlistItem objects for tidy sendoff
     var playlistItemObjects = [];
 
     /*
@@ -328,7 +358,7 @@ async function updateDbPlaylistItems(key, playlistId) {
      * videoPublishDate             (datetime)  - publish date of the video associated with the playlistItem
      */
     // and add each object to the array of playlist objects
-    for (var element of playlistItems) {
+    for (var element of playlistItemArray) {
         let datetime = element.snippet.publishedAt.replace("T", " ");
         datetime = datetime.replace("Z", "");
 
@@ -379,124 +409,11 @@ async function updateDbPlaylistItems(key, playlistId) {
     }
 
     // update the table with the correctly formatted objects using SQL
-    await tableUpdate("playlistItems", playlistItemObjects, sql);
-
-    // let opCounts = {
-    //     updates: 0,                         // number of playlistItems updated
-    //     inserts: 0,                         // number of playlistItems inserted
-    //     indexSelect: 0,                     // index of SQL select operations
-    //     indexModify: 0,                     // index of SQL insert/update operations
-    //     total: playlistItemObjects.length   // total number of playlistItems fetched by Youtube Data API
-    // };
-
-    // // connect to the database connection pool before performing SQL operations
-    // await pool.getConnection(async function(err, conn) {
-    //     if (err) throw (err);
-    //     console.log("Connected to database connection pool. Updating playlistItems..."); // confirm connection
-
-    //     // for each playlistItemObject, check if it exists in the database; if not, insert it
-    //     let playlistItemPromiseArray = playlistItemObjects.map(async function (element) {   // promisify each SQL execution so we can easily keep track of the quantity
-
-    //         // first check if the playlist is already in the database
-    //         let sql = "SELECT * FROM playlistItems WHERE playlistItemId = ?";
-    //         let params = [
-    //             element.playlistItemId
-    //         ];
-    //         //console.log("select sql declared");
-
-    //         let selectQuery = new Promise(function (resolve) {
-    //             conn.query(sql, params, async function(err, rows, fields) {
-    //                 if (err) throw (err); 
-    //                 //console.log(`item ${opCounts.index++}`);
-
-    //                 // compactly log playlistItems as they're iterated through
-    //                 opCounts.indexSelect++;
-    //                 process.stdout.cursorTo(0);
-    //                 process.stdout.write(`Checking playlistItem ${opCounts.indexSelect} of ${opCounts.total}...`);
-
-    //                 //if the playlistItem doesn't exist, add it
-    //                 if(!rows[0]) {
-    //                     let sql = "INSERT INTO playlistItems (playlistItemId, playlistItemTitle, playlistItemPublishDate, playlistId, videoId) VALUES (?, ?, ?, ?, ?)";
-    //                     let params = [
-    //                         element.playlistItemId,
-    //                         element.playlistItemTitle,
-    //                         element.playlistItemPublishDate,
-    //                         element.playlistId,
-    //                         element.videoId
-    //                     ];
-                        
-    //                     let insertQuery = new Promise(async function(resolve) {
-    //                         conn.query(sql, params, function(err, rows, fields) {
-    //                             if (err) throw (err);
-
-    //                             // increment tally of inserts
-    //                             resolve(opCounts.inserts++);
-    //                         });
-    //                     });
-
-    //                     // wait for the insert query to complete before proceeding to the next element
-    //                     await insertQuery;
-    //                 } else { // if it does exist, update it
-    //                     let sql = "UPDATE playlistItems SET playlistItemTitle = ?, playlistItemPublishDate = ?, playlistId = ?, videoId = ? WHERE playlistItemId = ?";
-    //                     let params = [
-    //                         element.playlistItemTitle,
-    //                         element.playlistItemPublishDate,
-    //                         element.playlistId,
-    //                         element.videoId,
-    //                         element.playlistItemId
-    //                     ];
-
-    //                     let updateQuery = new Promise(async function(resolve) {   
-    //                         conn.query(sql, params, function(err, rows, fields) {
-    //                             if (err) throw (err);
-                                
-    //                             // increment tally of updates
-    //                             resolve(opCounts.updates++);
-    //                         }); 
-    //                     });
-
-    //                     // wait for the update query to complete before proceeding to the next element
-    //                     await updateQuery;   
-    //                 }
-
-    //                 // resolve the wrapped select query before proceeding to the next element
-    //                 resolve(opCounts);
-
-    //                 // compactly log playlists as they're iterated through
-    //                 process.stdout.clearLine();
-    //                 opCounts.indexModify++;
-    //                 process.stdout.cursorTo(0);
-    //                 process.stdout.write(`Processing playlistItem ${opCounts.indexModify} of ${opCounts.total}...`);
-    //             });
-    //         });
-
-    //         // wait for the select query to complete before proceeding to the next element
-    //         await selectQuery;
-    //         return selectQuery; // the playlistItemPromiseArray gets filled with the return values of each selectQuery
-
-    //         // console.log("update"); *for debugging*
-
-    //         // resolve the outermost promise before adding it to the array
-    //         resolve(opCounts);
-    //     }); 
-
-    //     // wait for all SQL operations to complete, then log the amount of each type that occurred
-    //     let promises = Promise.all(playlistItemPromiseArray);
-    //     await promises;
-    //     process.stdout.clearLine();
-    //     process.stdout.cursorTo(0);
-    //     console.log(`Update complete!`);
-    //     console.log(`PlaylistItems inserted: ${opCounts.inserts}`);
-    //     console.log(`PlaylistItems updated: ${opCounts.updates}`);
-    //     console.log(`Total playlistItems modified: ${opCounts.total}\n`);
-
-    //     // release pool connection when finished updating 
-    //     conn.release();
-    // });
+    return new Promise(async function (resolve) {
+        resolve(await tableUpdate("playlistItems", playlistItemObjects, sql));
+    });
     
-    //console.log(playlistItemObjects);
-    // return array of playlistItems correctly formatted for the database
-    // return playlistItemObjects;
+    
 }
 
 //updateDbPlaylistItems(key, uploads);
@@ -507,43 +424,47 @@ async function updateDbPlaylistItems(key, playlistId) {
 async function updateDbVideos(key) {
 
     // get all playlistItems from "uploads" playlist
-    var playlistItems = await getPlaylistItems(key, uploads);
+    var playlistItems = await getPlaylistItems(key, uploads, "", []);
     
-    // create array of playlistItem objects to easily get videoId of each video
-    // var playlistItemObjects = [];
-    // for (var playlistItem of playlistItems) {
-    //     if (playlistItem.snippet.resourceId.kind == "youtube#video") {
-    //         playlistItemObjects.push({
-    //             videoId: playlistItem.snippet.resourceId.videoId,
-    //         });
-    //     }
-    // }
+    // create an array to hold detailed info for each video
+    var videos = [];
+
+    for await(let playlistItem of playlistItems) {
+        // make sure the playlistItem is a video before we add it to the videos array
+        if (playlistItem.snippet.resourceId.kind == "youtube#video") {
+            let video = await getVideoInfo(key, playlistItem.snippet.resourceId.videoId);
+            
+            videos.push(await video);
+            //console.log(video);
+        }
+    }
     
     // create array of video objects for tidy sendoff
     var videoObjects = [];
 
     // for each video, make a new object representing that video with the specific data we want
     // and add it to the array of video objects
-    for (var element of playlistItems) {
-        console.log("video");
-        if (element.snippet.resourceId.kind == "youtube#video") {
-            //console.log(element.videoId);
-            //var videoInfo = await getVideoInfo(key, element.videoId);
-            // videoObjects.push({
-            //     videoId: videoInfo.id,
-            //     // title: element.snippet.title,
-            //     // publishDate: element.snippet.publishedAt,
-            //     // videoCount: element.contentDetails.itemCount,
-            //     // videos: []
-            // });
-        }   
-    }
-    
+    for (var element of videos) {
+        //console.log(element.videoId);
+        videoObjects.push({
+            videoId: element.id,
+            videoTitle: element.snippet.title,
+            videoPublishDate: element.snippet.publishedAt,
+            videoDescription: element.snippet.description,
+            videoThumbnails: element.snippet.thumbnails,
+            videoDuration: element.contentDetails.duration,
+            videoViewCount: element.statistics.viewCount,
+            videoLikeCount: element.statistics.likeCount,
+            videoCommentCount: element.statistics.commentCount
+        });
+          
+    }   
 
     //todo: retrieve all videos from "uploads" playlist
             // 1. use getPlaylistItems to get all videos from "uploads" playlist
 
     // return array of videos correctly formatted for the database
+    console.log(videoObjects);
     return videoObjects;
 }
 
@@ -797,6 +718,9 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
         let promises = Promise.all(promiseArray);
         await promises;
         
+        promises.then(function() {
+
+        });
         process.stdout.clearLine();
         process.stdout.cursorTo(0);
         console.log();
@@ -812,6 +736,3 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
 
 
 
-app.listen(3000, () => {
-  console.log('server started');
-});
