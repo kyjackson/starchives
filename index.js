@@ -8,6 +8,7 @@ const readline = require('readline');
 const {google} = require('googleapis');
 const {getSubtitles}  = require('youtube-captions-scraper');
 const https = require('https');
+const EventEmitter = require('events');
 //const axios = require('axios').default;
 
 // create the Express application
@@ -37,6 +38,15 @@ const pool = mysql.createPool({
 app.listen(3000, () => {
   console.log('server started');
 });
+
+// helpers
+const timer = ms => new Promise(res => setTimeout(res, ms));
+const event = new EventEmitter();
+event.on("interrupt", function listener() {
+    process.stdout.clearLine();
+    process.stdout.cursorTo(0);
+});
+
 
 /*
  * Access tree from channel to caption:
@@ -120,7 +130,7 @@ async function getPlaylistItems(key, playlistId, pageToken, pageResults) {
         auth: key,
         playlistId: playlistId,
         part: 'snippet, contentDetails',
-        maxResults: 50,
+        maxResults: 50, // this is the max allowed, unfortunately
         pageToken: pageToken
     });
 
@@ -147,7 +157,6 @@ async function getPlaylistItems(key, playlistId, pageToken, pageResults) {
         //console.log(playlistItems);
         return playlistItems;
     }
-    
 }
 
 //getPlaylistItems(key, uploads, "", []);
@@ -160,7 +169,7 @@ async function getVideoInfo(key, videoId) {
         auth: key,
         id: videoId,
         part: 'snippet, contentDetails, status, statistics',
-        maxResults: 50 // this is the max allowed, unfortunately
+        maxResults: 50 
     });
 
     var videoInfo = res.data.items[0];       // get first video
@@ -201,7 +210,7 @@ async function getCaptions(videoId) {
         });
 
     // use this to convert promise response to a string (to be stored as a string in the database, or written to file)
-    var captionsJson = JSON.stringify(captions, null, 4);
+    let captionTrack = JSON.stringify(captions, null, 4);
 
     // the following code can be used to write jsons to a file
     // fs.writeFile("test.txt", jsonData, function(err) {
@@ -210,10 +219,10 @@ async function getCaptions(videoId) {
     //     }
     // });
 
-    //console.log(captionsJson);
+    //console.log(captionTrack);
 
     // return captions of the specified video as a stringified JSON
-    return captionsJson;
+    return captionTrack;
 }
 
 //getCaptions(video0);
@@ -224,18 +233,18 @@ async function getCaptions(videoId) {
  * this function gathers info from every updateDb function and updates the database with it using SQL
  */
 async function updateDb() {
-    const timer = ms => new Promise(res => setTimeout(res, ms));
+    await timer(3000);
+    console.log("All update functions will now execute synchronously, but may finish asynchronously!");
 
-    // call all db update functions at the same time
+    // call all db update functions synchronously
+    await timer(3000);
+    await updateDbPlaylists(key, rsiChannelId);
 
-    //updateDbPlaylists(key, rsiChannelId);
-    //await timer(3000);
-
-    // await updateDbPlaylistItems(key, uploads);
-    // await timer(10000);
-
-    updateDbVideos(key);
-    await timer(10000);
+    await timer(3000);
+    //await updateDbPlaylistItems(key, uploads);
+    
+    await timer(3000);
+    //await updateDbVideos(key);
 
     // updateDbPlaylistItems...
 }
@@ -246,9 +255,14 @@ updateDb();
  * this function gathers all desired playlist info and sends it to the database "playlists" table
  */
 async function updateDbPlaylists(key, channelId) {
+    event.emit("interrupt");
+    console.log("Now retrieving all playlists...");
 
     // get all playlists
     var playlists = await getPlaylists(key, rsiChannelId, "", []);
+
+    event.emit("interrupt");
+    console.log(`${playlists.length} playlists retrieved.`);
     
     // create array of playlist objects for tidy sendoff
     var playlistObjects = [];
@@ -256,10 +270,10 @@ async function updateDbPlaylists(key, channelId) {
     /*
      * for each playlist, make a new object representing that playlist with the following data:
      * 
-     * playlistId   - unique ID of the playlist
-     * title        - title of the playlist
-     * publishDate  - data playlist was published
-     * videoCount   - number of videos in the playlist
+     * playlistId         (string)          - unique ID of the playlist
+     * title              (string)          - title of the playlist
+     * publishDate        (datetime)        - data playlist was published
+     * videoCount         (int)             - number of videos in the playlist
      */
     // and add each object to the array of playlist objects
     for (var element of playlists) {
@@ -305,16 +319,12 @@ async function updateDbPlaylists(key, channelId) {
     }
 
     // update the table with the correctly formatted objects using SQL
-    return new Promise(async function (resolve) {
-        await tableUpdate("playlists", playlistObjects, sql);
-        resolve(console.log("Update complete"));
-    });
-    
+    await tableUpdate("playlists", playlistObjects, sql);
 }
 
 //updateDbPlaylists(key, rsiChannelId);
 
-/* todo get all playlistitems on channel instead of just in uploads playlist
+/* 
  * this function gathers all desired info about every playlistItem and sends it to the database 
  * "playlistItems" table
  */
@@ -331,7 +341,9 @@ async function updateDbPlaylistItems(key, playlistId) {
         // get all playlists first
     var playlists = await getPlaylists(key, rsiChannelId, "", []);
 
-    console.log("Fetching all playlistItems...");
+    event.emit("interrupt");
+    console.log("Now retrieving all playlistItems. This will take a few minutes...");
+
     for await (let playlist of playlists) {
         var playlistItems = await getPlaylistItems(key, playlist.id, "", []); // get every playlistItem in each playlist
 
@@ -340,7 +352,8 @@ async function updateDbPlaylistItems(key, playlistId) {
         }
     }
 
-    console.log(`${playlistItemArray.length} playlistItems fetched.`);
+    event.emit("interrupt");
+    console.log(`${playlistItemArray.length} playlistItems retrieved.`);
     // }
 
     // create new array of playlistItem objects for tidy sendoff
@@ -349,13 +362,13 @@ async function updateDbPlaylistItems(key, playlistId) {
     /*
      * for each playlistItem, make a new object representing that playlistItem with the following data:
      * 
-     * playlistItemId               (string)    - unique ID of the playlistItem
-     * playlistItemTitle            (string)    - title of the playlistItem
-     * playlistItemPublishDate      (datetime)  - date the video was added to the playlist
-     * playlistItemDescription      (string)    - description of the playlistItem
-     * playlistId                   (string)    - unique ID of the playlist associated with the playlistItem
-     * videoId                      (string)    - unique ID of the video associated with the playlistItem
-     * videoPublishDate             (datetime)  - publish date of the video associated with the playlistItem
+     * playlistItemId                 (string)          - unique ID of the playlistItem
+     * playlistItemTitle              (string)          - title of the playlistItem
+     * playlistItemPublishDate        (datetime)        - date the video was added to the playlist
+     * playlistItemDescription        (string)          - description of the playlistItem
+     * playlistId                     (string)          - unique ID of the playlist associated with the playlistItem
+     * videoId                        (string)          - unique ID of the video associated with the playlistItem
+     * videoPublishDate               (datetime)        - publish date of the video associated with the playlistItem
      */
     // and add each object to the array of playlist objects
     for (var element of playlistItemArray) {
@@ -409,16 +422,12 @@ async function updateDbPlaylistItems(key, playlistId) {
     }
 
     // update the table with the correctly formatted objects using SQL
-    return new Promise(async function (resolve) {
-        resolve(await tableUpdate("playlistItems", playlistItemObjects, sql));
-    });
-    
-    
+    await tableUpdate("playlistItems", playlistItemObjects, sql);
 }
 
 //updateDbPlaylistItems(key, uploads);
 
-/* todo update with sql
+/* 
  * this function gathers all desired info about every video and sends it to the database "videos" table
  */
 async function updateDbVideos(key) {
@@ -426,46 +435,110 @@ async function updateDbVideos(key) {
     // get all playlistItems from "uploads" playlist
     var playlistItems = await getPlaylistItems(key, uploads, "", []);
     
+    event.emit("interrupt");
+    console.log("Now retrieving all videos. This will take a few minutes...");
     // create an array to hold detailed info for each video
     var videos = [];
-
     for await(let playlistItem of playlistItems) {
         // make sure the playlistItem is a video before we add it to the videos array
         if (playlistItem.snippet.resourceId.kind == "youtube#video") {
             let video = await getVideoInfo(key, playlistItem.snippet.resourceId.videoId);
-            
             videos.push(await video);
-            //console.log(video);
         }
     }
+
+    // test db entry on one video because querying all uploads is costly (currently 1/6 of daily limit)
+    // let video = await getVideoInfo(key, playlistItems[0].snippet.resourceId.videoId);        
+    // videos.push(await video);
+
+    event.emit("interrupt");
+    console.log(`${videos.length} videos retrieved.`);
     
     // create array of video objects for tidy sendoff
     var videoObjects = [];
 
+    /*
+     * for each video, make a new object representing that video with the following data:
+     * 
+     * videoId                  (string)          - unique ID of the video
+     * videoTitle               (string)          - title of the video
+     * videoPublishDate         (datetime)        - date the video was first published
+     * videoDescription         (string)          - description of the video
+     * videoThumbnails          (string)          - stringified JSON of the video's thumbnail info
+     * videoDuration            (string)          - time length of the video
+     * videoViewCount           (int)             - number of views for the video
+     * videoLikeCount           (int)             - number of likes for the video
+     * videoCommentCount        (int)             - number of comments for the video
+     */
+
     // for each video, make a new object representing that video with the specific data we want
     // and add it to the array of video objects
     for (var element of videos) {
-        //console.log(element.videoId);
+        let datetime = element.snippet.publishedAt.replace("T", " ");
+        datetime = datetime.replace("Z", "");
+
         videoObjects.push({
             videoId: element.id,
             videoTitle: element.snippet.title,
-            videoPublishDate: element.snippet.publishedAt,
+            videoPublishDate: datetime,
             videoDescription: element.snippet.description,
-            videoThumbnails: element.snippet.thumbnails,
+            videoThumbnails: JSON.stringify(element.snippet.thumbnails.maxres, null, 4), // todo test if all thumbnail sizes can be stringified
             videoDuration: element.contentDetails.duration,
             videoViewCount: element.statistics.viewCount,
             videoLikeCount: element.statistics.likeCount,
             videoCommentCount: element.statistics.commentCount
         });
-          
+        
     }   
 
-    //todo: retrieve all videos from "uploads" playlist
-            // 1. use getPlaylistItems to get all videos from "uploads" playlist
+    // determine what queries need to be executed and the values they should carry
+    let sql = {
+        select: {
+            query: "SELECT * FROM videos WHERE videoId = ?",
+            params: [
+                "videoId"
+            ]
+        },
 
-    // return array of videos correctly formatted for the database
-    console.log(videoObjects);
-    return videoObjects;
+        insert: {
+            query: "INSERT INTO videos (videoId, videoTitle, videoPublishDate, videoDescription, videoThumbnails, videoDuration, videoViewCount, videoLikeCount, videoCommentCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params: [
+                "videoId",
+                "videoTitle",
+                "videoPublishDate",
+                "videoDescription",
+                "videoThumbnails",
+                "videoDuration",
+                "videoViewCount",
+                "videoLikeCount",
+                "videoCommentCount"
+            ]
+        },
+
+        update: {
+            query: "UPDATE videos SET videoTitle = ?, videoPublishDate = ?, videoDescription = ?, videoThumbnails = ?, videoDuration = ?, videoViewCount = ?, videoLikeCount = ?, videoCommentCount = ? WHERE videoId = ?",
+            params: [
+                "videoTitle",
+                "videoPublishDate",
+                "videoDescription",
+                "videoThumbnails",
+                "videoDuration",
+                "videoViewCount",
+                "videoLikeCount",
+                "videoCommentCount",
+                "videoId"
+            ]
+        }
+    }
+
+    // the following example can be used to parse the thumbnail info of the first video result back into JSON format
+    /*
+        let videoThumbnails = await executeSQL(sql);
+        let videoThumbnailsJson = JSON.parse(videoThumbnails[0].videoThumbnails);
+    */
+
+    // update the table with the correctly formatted objects using SQL
+    await tableUpdate("videos", videoObjects, sql);
 }
 
 //updateDbVideos(key);
@@ -632,7 +705,8 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
     // connect to the database connection pool before performing SQL operations
     await pool.getConnection(async function(err, conn) {
         if (err) throw (err);
-        console.log(`\nConnected to database connection pool. Updating ${tableName}...`); // confirm connection
+        console.log(`\nConnected to database pool. Updating ${tableName}...`); // confirm connection
+        console.time(`Total ${tableName} update time`);
 
         // for each object, check if it exists in the database; if not, insert it
         let promiseArray = dbReadyArray.map(async function (element) {   // promisify each SQL execution so we can easily keep track of the quantity
@@ -650,8 +724,8 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
 
                     // compactly log objects as they're iterated through
                     metadata.indexSelect++;
-                    process.stdout.cursorTo(0);
-                    process.stdout.write(`Checking item ${metadata.indexSelect} of ${metadata.total}...`);
+                    await process.stdout.cursorTo(0);
+                    await process.stdout.write(`Checking item ${metadata.indexSelect} of ${metadata.total}...`);
                     if (metadata.indexSelect == metadata.total) {
                         process.stdout.clearLine();
                     }
@@ -699,8 +773,8 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
                     resolve(metadata.indexModify++);
 
                     // compactly log playlists as they're iterated through
-                    process.stdout.cursorTo(0);
-                    process.stdout.write(`Processing item ${metadata.indexModify} of ${metadata.total}...`);
+                    await process.stdout.cursorTo(0);
+                    await process.stdout.write(`Processing item ${metadata.indexModify} of ${metadata.total}...`);
                 });
             });
 
@@ -715,24 +789,20 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
         }); 
 
         // wait for all SQL operations to complete, then log the amount of each type that occurred
-        let promises = Promise.all(promiseArray);
-        await promises;
-        
-        promises.then(function() {
+        await Promise.all(promiseArray);
 
-        });
         process.stdout.clearLine();
         process.stdout.cursorTo(0);
         console.log();
         console.log(`Update complete!`);
         console.log(`${tableName} inserted: ${metadata.inserts}`);
         console.log(`${tableName} updated: ${metadata.updates}`);
-        console.log(`Total ${tableName} modified: ${metadata.total}\n`);
+        console.log(`Total ${tableName} modified: ${metadata.total}`);
+        console.timeEnd("Total update time");
+        console.log();
 
         // release pool connection when finished updating 
         conn.release();
     });
 }
-
-
 
