@@ -31,9 +31,12 @@ app.listen(3000, () => {
 // in one fell swoop, update everything
 update();
 
+// database update should occur once every day at midnight
 async function update() {
     await database.updateDb();
 }
+
+// stats update should occur once every hour
 
 
 
@@ -43,7 +46,7 @@ async function update() {
 
 // home route
 app.get('/', (req, res) => {
-  res.render('home')
+    res.render('home');
 });
 
 // library route
@@ -56,46 +59,67 @@ app.get('/about', (req, res) => {
   res.render('about')
 });
 
+// endpoint testing
+app.get('/playlists', async (req, res) => {
+    // get playlists
+    let sql = "SELECT * FROM playlists";
+    let results = await database.executeSQL(sql);
+
+    res.send(results);
+})
+
 
 
 //----------------Search-specific examples----------------
 
 
 
-//search route
-app.get('/search', async (req, res) => {
+// search endpoint
+app.get('/results', async (req, res) => {
 
-  let sql = `SELECT * FROM q_author`;
-  let sql2 = `SELECT DISTINCT category FROM q_quotes`;
+    let query = req.query.query;
 
-  let authors = await executeSQL(sql);
-  let categories = await executeSQL(sql2)
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
+    let params = [`%${query}%`];
+
+    let results = await database.executeSQL(sql, params);
+
+    res.send(results);
+});
 
 
-  res.render('search', {
-    "authors": authors,
-    "categories": categories,
-  })
+
+// advanced search endpoint todo
+app.get('/library/results', async (req, res) => {
+
+    let query = req.query.query;
+
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
+    let params = [`%${query}%`];
+
+    let results = await database.executeSQL(sql, params);
+
+    res.send(results);
 });
 
 //search results route
-app.get("/results", async function(req, res) {
+// app.get("/results", async function(req, res) {
 
-  let word = req.query.keyword;
+//   let term = req.query.keyword;
 
-  let sql = `SELECT video FROM videos WHERE caption LIKE ?`;
-  let params = [`%${word}%`]
+//   let sql = `SELECT videoId FROM captions WHERE captionTrack LIKE ?`;
+//   let params = [`%${term}%`]
 
-  if (req.query.authorId) { //if author was selected (if authorId has any value)
-    sql += "AND authorId = ? ";
-    params.push(req.query.authorId);
-  }
+//   if (req.query.authorId) { //if author was selected (if authorId has any value)
+//     sql += "AND authorId = ? ";
+//     params.push(req.query.authorId);
+//   }
 
-  if (req.query.category) {
-    sql += "AND category = ? ";
-    params.push(req.query.category);
-  }
+//   if (req.query.category) {
+//     sql += "AND category = ? ";
+//     params.push(req.query.category);
+//   }
 
-  let rows = await executeSQL(sql, params);
-  res.render('results', { "rows": rows });
-});
+//   let rows = await database.executeSQL(sql, params);
+//   res.render('results', { "rows": rows });
+// });

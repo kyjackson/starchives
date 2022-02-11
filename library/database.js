@@ -611,5 +611,6 @@ module.exports = {
     updateDbPlaylistItems,
     updateDbVideos,
     updateDbCaptions,
-    tableUpdate
+    tableUpdate,
+    executeSQL
 };

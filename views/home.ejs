@@ -4,17 +4,34 @@
 
   <!-- Jumbotron card containing search bar -->
   <div class="p-5 mb-4 text-white bg-dark rounded-3">
-    <div class="container-fluid">
-      <h1 class="display-6 fw">Enter Query</h1>
-      <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among the videos uploaded to the Star Citizen Youtube channel.</p>
+    <div class="container-fluid" id="search">
+      <form id="searchbar" action="/results" method="GET">
+        <h1 class="display-6 fw">Enter Query</h1>
+        <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among the videos uploaded to the Star Citizen Youtube channel.</p>
 
-      <div class="row justify-content-center">
-        <div class="my-4 col-9">
-          <input type="text" class="form-control text-center" id="query" placeholder="Search...">
+        <div class="row justify-content-center">
+            <div class="my-4 col-9">
+            <input type="text" class="form-control text-center" id="queryBar" name="query" placeholder="Search...">
+            </div>
         </div>
-      </div>
 
-      <button class="btn btn-light btn-lg" type="button">Search Archive</button>
+        <button class="btn btn-light btn-lg" type="submit">Search Archive</button>
+      </form>
+
+        <div class="accordion" id="accordionExample">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        Accordion Item #1
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                        <strong>This is the first item's accordion body.</strong> It is shown by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
   </div>
 
@@ -25,7 +42,7 @@
     <div class="col-md-6 mb-4">
       <div class="h-100 p-5 justify-content-left text-white bg-dark rounded-3">
         <h2>Purpose</h2>
-        <p class="text-start">At the time of writing this, there are over 1200 videos uploaded to Star Citizen's official Youtube channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, people will often bring up something a developer at CIG said in one or more videos uploaded years ago. With multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to provide sources for their claims or fact-check the claims of others will have an exceedingly difficult time doing so if they don't know the particular video.</p>
+        <p class="text-start">At the time of writing this, there are over 1500 videos uploaded to Star Citizen's official Youtube channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, people will often bring up something a developer at CIG said in one or more videos uploaded years ago. With multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to provide sources for their claims or fact-check the claims of others will have an exceedingly difficult time doing so if they don't know the particular video.</p>
 
         <p class="text-start">With the advent of Youtube's auto-generated captions, this changes. This site allows anyone to search a database of official Star Citizen videos and their associated captions to quickly find the information they're searching for. Full transcriptions of each video are provided, along with timestamps for search terms that have a match. Searching for a specific phrase should now take minutes, not hours, of combing through videos. Additionally, search stats are provided so anyone can see what the community has been most curious about.</p>
         
@@ -42,9 +59,31 @@
 
   </div>
 
-  
-
 </div>
+
+<script>
+
+    /**
+     * Send a GET request to our own API endpoint for retrieving relevant captions from our database.
+     */
+    $("form").on("submit", function(event) {
+        event.preventDefault();
+            
+        let query = $("#queryBar").val();
+        let url = `https://archivesc.kjackson96.repl.co/results?query=${query}`;
+        $.ajax({
+            method: "GET",
+            url: url,
+            dataType: 'json'
+            //data: req.query.query
+        })
+        .done(function (result) {
+            console.log(result);
+        });
+    });
+
+
+  </script>
 
 
 <%- include("partials/footer.ejs") %>
