@@ -1,0 +1,10 @@
+#loading
+{
+    visibility: hidden;
+    /* display: none; */
+}
+
+#results {
+    /* visibility: hidden; */
+    display: none;
+}

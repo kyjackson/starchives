@@ -2,88 +2,159 @@
 
 <div class="container px-0 py-3">
 
-  <!-- Jumbotron card containing search bar -->
-  <div class="p-5 mb-4 text-white bg-dark rounded-3">
-    <div class="container-fluid" id="search">
-      <form id="searchbar" action="/results" method="GET">
-        <h1 class="display-6 fw">Enter Query</h1>
-        <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among the videos uploaded to the Star Citizen Youtube channel.</p>
+    <!-- Jumbotron card containing search bar -->
+    <div class="p-4 mb-4 text-white bg-dark rounded-3">
+        <div class="p-4 container-fluid" id="search">
+            <form id="searchbar" action="/results" method="GET">
+                <h1 class="display-6 fw">Enter Query</h1>
+                <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among the videos uploaded to the Star Citizen Youtube channel.</p>
 
-        <div class="row justify-content-center">
-            <div class="my-4 col-9">
-            <input type="text" class="form-control text-center" id="queryBar" name="query" placeholder="Search...">
-            </div>
-        </div>
-
-        <button class="btn btn-light btn-lg" type="submit">Search Archive</button>
-      </form>
-
-        <div class="accordion" id="accordionExample">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="headingOne">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        Accordion Item #1
-                    </button>
-                </h2>
-                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                    <div class="accordion-body">
-                        <strong>This is the first item's accordion body.</strong> It is shown by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+                <div class="row justify-content-center">
+                    <div class="my-4 col-9">
+                    <input type="text" class="form-control text-center" id="queryBar" name="query" placeholder="Search...">
                     </div>
                 </div>
-            </div>
+
+                <button class="btn btn-light btn-lg" type="submit">
+                    Search Archive
+                    <span id="loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                </button>
+            </form>
+
+            <!-- Search results get displayed inside this div -->
+            <div id="results" class="pt-4 d-flex flex-column justify-content-center"></div>
+
         </div>
     </div>
-  </div>
 
-  <!-- Cards containing purpose statement and search stats -->
-  <div class="row align-items-md-stretch">
-    
-    <!-- Purpose statement card -->
-    <div class="col-md-6 mb-4">
-      <div class="h-100 p-5 justify-content-left text-white bg-dark rounded-3">
-        <h2>Purpose</h2>
-        <p class="text-start">At the time of writing this, there are over 1500 videos uploaded to Star Citizen's official Youtube channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, people will often bring up something a developer at CIG said in one or more videos uploaded years ago. With multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to provide sources for their claims or fact-check the claims of others will have an exceedingly difficult time doing so if they don't know the particular video.</p>
-
-        <p class="text-start">With the advent of Youtube's auto-generated captions, this changes. This site allows anyone to search a database of official Star Citizen videos and their associated captions to quickly find the information they're searching for. Full transcriptions of each video are provided, along with timestamps for search terms that have a match. Searching for a specific phrase should now take minutes, not hours, of combing through videos. Additionally, search stats are provided so anyone can see what the community has been most curious about.</p>
+    <!-- Cards containing purpose statement and search stats -->
+    <div class="row align-items-md-stretch">
         
-      </div>
-    </div>
+        <!-- Purpose statement card -->
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 justify-content-left text-white bg-dark rounded-3">
+                <h2>Purpose</h2>
+                <p class="text-start">At the time of writing this, there are over 1500 videos uploaded to the Star Citizen YouTube channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, people will often bring up something mentioned in one or more videos uploaded years ago. With multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to provide sources for their claims will have an exceedingly difficult time doing so if they don't know the particular video.</p>
 
-    <!-- Search stats card -->
-    <div class="col-md-6 mb-4">
-      <div class="h-100 p-5 text-white bg-dark rounded-3">
-        <h2>Stats</h2>
-        <p>Coming soon</p>
-      </div>
-    </div>
+                <p class="text-start">With the help of YouTube's auto-generated captions, this changes. This site allows anyone to search a database of all videos on the Star Citizen channel and their associated captions to quickly find the info they're searching for. Full transcriptions of each video are provided, along with timestamps for search terms that have a match. Searching for any mention of future plans or ships that punch above their weight class should now take minutes, not hours, of combing through videos. Additionally, search stats are provided so anyone can see what the community has been most curious about.</p>
+                
+            </div>
+        </div>
 
-  </div>
+        <!-- Search stats card -->
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 text-white bg-dark rounded-3">
+                <h2>Stats</h2>
+                <p>Coming soon</p>
+            </div>
+        </div>
+
+    </div>
 
 </div>
 
-<script>
+<script> // todo: page numbers for results
+
+    $("#loading").hide();
+    //$("#results").hide();
 
     /**
      * Send a GET request to our own API endpoint for retrieving relevant captions from our database.
      */
     $("form").on("submit", function(event) {
         event.preventDefault();
-            
+        $("#results").empty();
+
         let query = $("#queryBar").val();
-        let url = `https://archivesc.kjackson96.repl.co/results?query=${query}`;
-        $.ajax({
-            method: "GET",
-            url: url,
-            dataType: 'json'
-            //data: req.query.query
-        })
-        .done(function (result) {
-            console.log(result);
-        });
+
+        if (query.length == 0) {
+
+            console.log("error: no query");
+
+        } else {
+            $("#loading").show();
+            $("#loading").css("visibility", "visible");
+            $("#results").show();
+
+            let url = `https://archivesc.kjackson96.repl.co/results?query=${query}`;
+            $.ajax({
+                method: "GET",
+                url: url,
+                dataType: 'json'
+                //data: req.query.query
+            })
+            .done(function (result) {
+                $("#loading").hide();
+                $("#loading").css("visibility", "hidden");
+                $("#results").show();
+
+                $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${result.length} videos containing "${query}"</p>`);
+
+                if (result.length > 0) {
+
+                    $("#results").append(`
+                        <div class="mx-auto w-75 accordion accordion-flush" id="resultsAccordion"></div>
+                    `);
+
+                    for (let video in result) {
+
+                        let json = JSON.parse(result[video].captionTrack);
+                        let map = new Map();
+
+                        // get every occurance of the search phrase in the caption track
+                        json.forEach(function(segment, index) {
+                            if (segment.text.includes(query)) {
+                                // convert seconds to min:sec
+                                let min = Math.floor(segment.start / 60);
+                                let sec = Math.floor(segment.start - (min * 60));
+                                let time = `${min}:${sec}`;
+
+                                map.set(time, segment.text);
+                            }
+                        });
+
+                        // append accordion items with all relevant video info
+                        $("#resultsAccordion").append(`
+                            <div class="bg-dark pt-3 accordion-item" id="${result[video].videoId}">
+
+                                <h2 class="accordion-header" id="header-${result[video].videoId}">
+                                    <button class="bg-dark bg-gradient text-white accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${result[video].videoId}" aria-expanded="false" aria-controls="collapse-${result[video].videoId}">
+                                        <div class="w-100 text-center accordion-header-text">
+                                            ${result[video].videoTitle}
+                                        </div>
+                                    </button>
+                                </h2>
+
+                                <div id="collapse-${result[video].videoId}" class="bg-secondary accordion-collapse collapse" aria-labelledby="header-${result[video].videoId}">
+                                    <div id="body-${result[video].videoId}" class="bg-dark accordion-body">
+                                        <iframe width="560" height="315" src="https://www.youtube.com/embed/${result[video].videoId}?start=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        `);
+
+                        // append timestamp links to each accordion item
+                        // todo: change embed src on timestamp click
+                        map.forEach(function (value, key) {
+                            $(`#body-${result[video].videoId}`).append(`
+
+                                <br><a>${key}</a> <span>- "...${value}..."</span>
+                            
+                            `);
+                        });
+
+                    }
+                } 
+
+                console.log(result);
+            });
+
+        }
+        
     });
 
-
-  </script>
-
+</script>
 
 <%- include("partials/footer.ejs") %>
