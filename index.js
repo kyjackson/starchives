@@ -1,5 +1,6 @@
 // set up package requirements for server
 const express = require('express');
+const cookieParser = require('cookie-parser');
 //const fs = require('fs');
 //const buffer = require('buffer');
 //const readline = require('readline');
@@ -13,9 +14,10 @@ const database = require('./library/database');
 // create the Express application
 const app = express();
 
-// set Express to use the EJS template engine, set "public" as folder to serve clients from
+// set Express to use the EJS template engine, set "public" as folder to serve clients from, enable cookie parser
 app.set("view engine", "ejs");
 app.use(express.static("public"));
+app.use(cookieParser());
 
 
 
@@ -76,6 +78,9 @@ app.get('/playlists', async (req, res) => {
 
 // search endpoint
 app.get('/results', async (req, res) => {
+    // fix samesite cookie problem
+    //response.setHeader('Set-Cookie', ['type=ninja', 'language=javascript']);
+    res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true });
 
     let query = req.query.query;
 
@@ -84,7 +89,22 @@ app.get('/results', async (req, res) => {
 
     let results = await database.executeSQL(sql, params);
 
-    res.send(results);
+    function paginate(array, pageSize, pageNumber) {
+        // human-readable page numbers usually start with 1, so we reduce 1 in the first argument
+        return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
+    }
+
+    let pages = 0;
+    if (results.length > 10) {
+        pages = results.length / 10;
+    }
+    
+    let resultsPages = [];
+    for (let i = 0; i <= pages; i++) {
+        resultsPages.push(paginate(results, 10, i));
+    }
+
+    res.send(resultsPages);
 });
 
 
