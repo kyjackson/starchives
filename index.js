@@ -33,7 +33,7 @@ app.listen(3000, () => {
 // in one fell swoop, update everything
 update();
 
-// database update should occur once every day at midnight
+// database update should occur once every week at midnight
 async function update() {
     await database.updateDb();
 }
@@ -42,7 +42,7 @@ async function update() {
 
 
 
-//----------------Routes examples----------------
+//----------------Routes----------------
 
 
 
@@ -51,28 +51,19 @@ app.get('/', (req, res) => {
     res.render('home');
 });
 
-// library route
-app.get('/library', (req, res) => {
-  res.render('library')
+// stats route
+app.get('/stats', (req, res) => {
+  res.render('stats');
 });
 
 // about route
 app.get('/about', (req, res) => {
-  res.render('about')
+  res.render('about');
 });
 
-// endpoint testing
-app.get('/playlists', async (req, res) => {
-    // get playlists
-    let sql = "SELECT * FROM playlists";
-    let results = await database.executeSQL(sql);
-
-    res.send(results);
-})
 
 
-
-//----------------Search-specific examples----------------
+//----------------Endpoints----------------
 
 
 
@@ -80,17 +71,16 @@ app.get('/playlists', async (req, res) => {
 app.get('/results', async (req, res) => {
     // fix samesite cookie problem
     //response.setHeader('Set-Cookie', ['type=ninja', 'language=javascript']);
-    res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true });
+    //res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true });
 
     let query = req.query.query;
 
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? LIMIT 50`;
     let params = [`%${query}%`];
 
     let results = await database.executeSQL(sql, params);
 
     function paginate(array, pageSize, pageNumber) {
-        // human-readable page numbers usually start with 1, so we reduce 1 in the first argument
         return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
     }
 
@@ -114,13 +104,24 @@ app.get('/library/results', async (req, res) => {
 
     let query = req.query.query;
 
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? LIMIT 50`;
     let params = [`%${query}%`];
 
     let results = await database.executeSQL(sql, params);
 
     res.send(results);
 });
+
+
+
+// endpoint testing
+app.get('/playlists', async (req, res) => {
+    // get playlists
+    let sql = "SELECT * FROM playlists";
+    let results = await database.executeSQL(sql);
+
+    res.send(results);
+})
 
 //search results route
 // app.get("/results", async function(req, res) {

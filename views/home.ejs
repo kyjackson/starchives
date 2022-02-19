@@ -44,8 +44,21 @@
         <!-- Search stats card -->
         <div class="col-md-6 mb-4">
             <div class="h-100 p-5 text-white bg-dark rounded-3">
-                <h2>Stats</h2>
-                <p>Coming soon</p>
+                <h2>Caveats</h2>
+                <p class="text-start">1. <i>Captions are not always accurate.</i></p>
+                <p class="text-start">
+                    Due to the captions being auto-generated, they are not always accurate. What can be heard in a video will sometimes be transcribed as something unexpected by Google's caption transcription algorithm. This tends to occur more often in older videos.
+                </p>
+
+                <p class="text-start">2. <i>Not all searches are conclusive.</i></p>
+                <p class="text-start">
+                    Sometimes, a certain word or phrase can be broken up in one video's caption track and not in another. This can cause similar search terms to unexpectedly return different results (e.g., "multicrew" and "multi crew" return different results), and in some cases one term might return results while a similar term returns none. If either of these occur, try rephrasing your search to use a different keyword, or to be less specific.
+                </p>
+
+                <p class="text-start">3. <i>Auto-generated captions only have English localization.</i></p>
+                <p class="text-start">
+                    Unfortunately, auto-generated captions are not available in languages other than English. If you are interested in volunteering to transcribe caption tracks for another language, contact me and I'll consider any options with regard to adding them to my database.
+                </p>
             </div>
         </div>
 
@@ -100,6 +113,7 @@
                 $("#loading").css("visibility", "hidden");
                 $("#results").show();
 
+                // get amount of video results
                 let total = 0;
                 for (let i = 0; i < result.length; i++) {
                     for (let j = 0; j < result[i].length; j++) {
@@ -110,16 +124,17 @@
                 $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} videos containing "${query}"</p>`);
 
                 if (result.length > 0) {
+                    
+                    // display page navigation bar
                     let page = 0;
 
-                    // display page navigation bar
                     $("#results").append(`
 
                         <div class="mx-auto justify-content-end">
                         <nav aria-label="page-navigation">
                             <ul class="pagination">
                                 <li class="page-item">
-                                    <a id="previousPage" class="page-link" aria-label="Previous">
+                                    <a id="previousPage" class="page-link" href="#results" aria-label="Previous">
                                         <span aria-hidden="true">&laquo;</span>
                                     </a>
                                 </li>
@@ -129,7 +144,7 @@
                                 </li>
 
                                 <li class="page-item">
-                                    <a id="nextPage" class="page-link" aria-label="Next">
+                                    <a id="nextPage" class="page-link" href="#results" aria-label="Next">
                                         <span aria-hidden="true">&raquo;</span>
                                     </a>
                                 </li>
@@ -140,22 +155,52 @@
                         <div class="mx-auto w-75 accordion accordion-flush" id="resultsAccordion"></div>
                     `);
 
+                    
                     let pageMap = new Map();
                     result.forEach(function (page, index) {
                         //console.log(index);
                         pageMap.set(index, page);
                     });
                     
-                
-
+                    // always display the first page first
+                    $("#previousPage").prop("disabled");
                     showPage(pageMap.get(page));
+                    //console.log(pageMap.get(0));
 
+                    // set up result page navigation
+                    $("#previousPage").on("click", function() {
+                        //console.log("clicked");
+                        if (page > 0) {
+                            page--;
+                            $("#currentPage").html(`${page+1} of ${result.length}`);
+                            showPage(pageMap.get(page));
 
+                            if (page === 0) {
+                                $("#previousPage").prop("disabled");
+                            }
 
-                    console.log(pageMap.get(0));
+                            if (page < result.length && $("#nextPage").attr("disabled")) {
+                                $("#nextPage").removeProp("disabled");
+                            }
+                        }
+                    });
 
-                    // pagination here
+                    $("#nextPage").on("click", function() {
+                        //console.log("clicked");
+                        if (page < result.length-1) {
+                            page++;
+                            $("#currentPage").html(`${page+1} of ${result.length}`);
+                            showPage(pageMap.get(page));
 
+                            if (page === result.length) {
+                                $(this).prop("disabled");
+                            }
+
+                            if (page > 0 && $("#previousPage").attr("disabled")) {
+                                $("#nextPage").removeProp("disabled");
+                            }
+                        }
+                    });
 
                 } 
 
@@ -218,7 +263,7 @@
                         <div id="collapse-${page[video].videoId}" class="bg-secondary accordion-collapse collapse" aria-labelledby="header-${page[video].videoId}">
                             <div id="body-${page[video].videoId}" class="bg-dark accordion-body">
                                 <div id="player-${page[video].videoId}"></div>
-                                <div id="timestamps-${page[video].videoId}" class="d-flex flex-column justify-content-start"></div>
+                                <div id="timestamps-${page[video].videoId}" class="d-flex flex-column "></div>
                             </div>
                         </div>
 
@@ -227,14 +272,12 @@
 
                 // create the iframe for each video
                 let player = new YT.Player(`player-${page[video].videoId}`, {
-                    height: '390',
-                    width: '640',
+                    height: '480',
+                    width: '720',
                     videoId: page[video].videoId,
                     host: 'https://www.youtube.com'
                     //host: window.location
                 });
-
-                //console.log(player);
 
                 // append timestamp links to each accordion item
                 timestamps.forEach(function (value, key) {
@@ -243,10 +286,11 @@
                     $(`#timestamps-${page[video].videoId}`).append(`
 
                         <br>
-                        
-                        <span>
-                            <a href="#header-${page[video].videoId}" id="play-${key}-${page[video].videoId}">${time}</a> - "...${value}..."
-                        </span>
+                        <div class="pt-3 d-flex justify-content-left text-start">
+                            <a href="#header-${page[video].videoId}" id="play-${key}-${page[video].videoId}">${time}</a>
+                            <span>&nbsp;-&nbsp;</span>
+                            <p>"...${value}..."</p>
+                        </div>
                     
                     `);
                     
@@ -256,13 +300,7 @@
                         player.playVideo();
                     });
                     
-                    //$(`#body-${page[video].videoId}`).on("click", `#play-${key}-${page[video].videoId}`, function () {
-                        //console.log($(this));
-                        //$(`#video-${page[video].videoId}`)[0].src += "?autoplay=1";
-                    //});
-                    
                 });
-
             }
         }
 
