@@ -3,7 +3,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 //const fs = require('fs');
 //const buffer = require('buffer');
-const readline = require('readline');
+
 //const https = require('https');
 
 // initialize local modules

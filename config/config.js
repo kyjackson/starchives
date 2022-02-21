@@ -4,6 +4,7 @@
  */
 
 // set up package requirements for exports
+const readline = require('readline');
 const mysql = require('mysql');
 const {google} = require('googleapis');
 const {getSubtitles}  = require('youtube-captions-scraper');
@@ -30,6 +31,7 @@ const timer = ms => new Promise(res => setTimeout(res, ms));
 const event = new EventEmitter();
 
 module.exports = {
+    readline,
     pool,
     youtube,
     key,

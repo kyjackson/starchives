@@ -14,6 +14,7 @@
 
 // get all config variables needed for database functions to work correctly
 const {
+    readline,
     pool,
     key,
     rsiChannelId,
@@ -33,8 +34,8 @@ const {
 
 // setup event listeners
 event.on("interrupt", function listener() {
-    process.stdout.clearLine();
-    process.stdout.cursorTo(0);
+    process.readline.clearLine();
+    process.readline.cursorTo(0);
 });
 
 
