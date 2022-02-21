@@ -34,8 +34,8 @@ const {
 
 // setup event listeners
 event.on("interrupt", function listener() {
-    process.readline.clearLine();
-    process.readline.cursorTo(0);
+    readline.clearLine();
+    readline.cursorTo(process.stdout, 0);
 });
 
 
@@ -476,10 +476,10 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
 
                     // compactly log objects as they're iterated through
                     metadata.indexSelect++;
-                    await process.stdout.cursorTo(0);
+                    await readline.cursorTo(process.stdout, 0);
                     await process.stdout.write(`Checking item ${metadata.indexSelect} of ${metadata.total}...`);
                     if (metadata.indexSelect == metadata.total) {
-                        process.stdout.clearLine();
+                        readline.clearLine();
                     }
 
                     //if the object doesn't exist, add it
@@ -525,7 +525,7 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
                     resolve(metadata.indexModify++);
 
                     // compactly log playlists as they're iterated through
-                    await process.stdout.cursorTo(0);
+                    await readline.cursorTo(process.stdout, 0);
                     await process.stdout.write(`Processing item ${metadata.indexModify} of ${metadata.total}...`);
                 });
             });
@@ -543,8 +543,8 @@ async function tableUpdate(tableName, dbReadyArray, sql) {
         // wait for all SQL operations to complete, then log the amount of each type that occurred
         await Promise.all(promiseArray);
 
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
+        readline.clearLine();
+        readline.cursorTo(process.stdout, 0);
         console.log();
         console.log(`Update complete!`);
         console.log(`${tableName} inserted: ${metadata.inserts}`);
