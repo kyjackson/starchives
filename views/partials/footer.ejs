@@ -1,6 +1,62 @@
+<script>
+    // set current page as the active one in the navbar
+    // reference: https://stackoverflow.com/questions/20060467/add-active-navigation-class-based-on-url
+    $(function(){
+        var currentPath = location.pathname;
+        
+        $(".nav-link").each(function(){
+            var navLink = $(this);
+            // if the current path is like this link, make it active
+            if(navLink.attr("href") === currentPath){
+                navLink.addClass("active");
+                navLink.attr("aria-current", "page");
+            }
+        })
+    })
+</script>
 
-<footer class="container py-3 mt-0 text-light border-top">
-  © 2021
+<footer class="container p-4 mt-0 text-light border-top d-flex justify-content-between">
+    <div class="disclaimers text-start float-start">
+        <p>Disclaimers</p>
+        <hr>
+
+        <p>This is an unofficial Star Citizen fansite, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users are property of their respective owners.</p>
+
+        <p>Star Citizen®, Roberts Space Industries®, and Cloud Imperium® are registered trademarks of Cloud Imperium Rights LLC.</p>
+        
+        <p>© 2022 - Star Citizen Archive by Intelo</p>
+    </div>
+
+    <div class="links text-white text-start">
+        <p>Official Resources</p>
+        <hr>
+        
+        <p >
+            <a href="https://robertsspaceindustries.com/">Star Citizen Website</a>
+            <br>
+            <a href="https://www.youtube.com/channel/UCTeLqJq1mXUX5WWoNXLmOIA">Star Citizen Youtube Channel</a>
+        </p>
+    </div>
+
+    <div class="links flex-fill text-white text-start">
+        <p>My Favorite Community Resources</p>
+        <hr>
+
+        <p class="text-start">
+            <a href="https://finder.cornerstonebase.space/">Universal Item Finder</a>
+            <br>
+            
+        </p>
+    </div>
+
+    <div class="logo float-end">
+        <figure class="figure">
+            <a href="https://scfocus.org/resources/">
+                <img class="h-100" src="img/MadeByTheCommunity_Black.png" class="figure-img img-fluid rounded" alt="This is an unofficial Star Citizen fan site." width="128" height="128">
+            </a>
+        </figure>
+    </div>
+  
 </footer>
 
 </main>
