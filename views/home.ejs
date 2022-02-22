@@ -36,7 +36,7 @@
                 <h2>Purpose</h2>
                 <p class="text-start">At the time of writing this, there are over 1500 videos uploaded to the Star Citizen YouTube channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, people will often bring up something mentioned in one or more videos uploaded years ago. With multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to provide sources for their claims will have an exceedingly difficult time doing so if they don't know the particular video.</p>
 
-                <p class="text-start">With the help of YouTube's auto-generated captions, this changes. This site allows anyone to search a database of all videos on the Star Citizen channel and their associated captions to quickly find the info they're searching for. Full transcriptions of each video are provided, along with timestamps for search terms that have a match. Searching for any mention of future plans or ships that punch above their weight class should now take minutes, not hours, of combing through videos. Additionally, search stats are provided so anyone can see what the community has been most curious about.</p>
+                <p class="text-start">With the help of YouTube's auto-generated captions, this changes. This site allows anyone to search a database of all videos on the Star Citizen channel and their associated captions to quickly find the info they're searching for. Full transcriptions of each video are provided, along with timestamps for search terms that have a match. Searching for any mention of future plans, bespoke, or ships that punch above their weight class should now take minutes, not hours, of combing through videos. Additionally, search stats and video stats will soon be provided so anyone can see what the community has been most interested in.</p>
                 
             </div>
         </div>
@@ -57,7 +57,7 @@
 
                 <p class="text-start">3. <i>Auto-generated captions only have English localization.</i></p>
                 <p class="ps-5 text-start">
-                    Unfortunately, auto-generated captions are not available in languages other than English. If you are interested in volunteering to transcribe caption tracks for another language, contact me and I'll consider any options with regard to adding them to my database.
+                    Unfortunately, auto-generated captions are not available in languages other than English. If you are interested in volunteering to transcribe caption tracks for another language, contact me and I'll consider all options for adding them to the starchives.
                 </p>
             </div>
         </div>
@@ -101,12 +101,14 @@
             $("#loading").css("visibility", "visible");
             $("#results").show();
 
-            let url = `https://starchives.org/results?query=${query}`;
+            //let url = `${window.location}results`;
             $.ajax({
                 method: "GET",
-                url: url,
-                dataType: 'json'
-                //data: req.query.query
+                url: `${window.location}results`,
+                dataType: 'json',
+                data: {
+                    query: query
+                }
             })
             .done(function (result) {
                 $("#loading").hide();

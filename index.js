@@ -75,7 +75,7 @@ app.get('/results', async (req, res) => {
 
     let query = req.query.query;
 
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? LIMIT 50`;
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ?`;
     let params = [`%${query}%`];
 
     let results = await database.executeSQL(sql, params);
