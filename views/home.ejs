@@ -76,7 +76,7 @@
 
     // wait for Iframe API to be ready before searching
     function onYouTubeIframeAPIReady() {
-        console.log("iframe api is ready");
+        console.log("Iframe ready.");
         return;
     }
 
@@ -102,9 +102,10 @@
             $("#results").show();
 
             //let url = `${window.location}results`;
+            //console.log(window.location.origin);
             $.ajax({
                 method: "GET",
-                url: `${window.location}results`,
+                url: `${window.location.origin}/results`,
                 dataType: 'json',
                 data: {
                     query: query
@@ -136,7 +137,7 @@
                         <nav aria-label="page-navigation">
                             <ul class="pagination">
                                 <li class="page-item">
-                                    <a id="previousPage" class="page-link" href="#results" aria-label="Previous">
+                                    <a id="previousPage" class="page-link" aria-label="Previous">
                                         <span aria-hidden="true">&laquo;</span>
                                     </a>
                                 </li>
@@ -146,7 +147,7 @@
                                 </li>
 
                                 <li class="page-item">
-                                    <a id="nextPage" class="page-link" href="#results" aria-label="Next">
+                                    <a id="nextPage" class="page-link" aria-label="Next">
                                         <span aria-hidden="true">&raquo;</span>
                                     </a>
                                 </li>
