@@ -15,9 +15,9 @@
                     </div>
                 </div>
 
-                <button class="btn btn-light btn-lg" type="submit">
+                <button id="searchButton" class="btn btn-light btn-lg" type="submit">
                     Search Archive
-                    <span id="loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span id="loadingIcon" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 </button>
             </form>
 
@@ -80,7 +80,7 @@
         return;
     }
 
-    $("#loading").hide();
+    $("#loadingIcon").hide();
     //$("#results").hide();
 
     /**
@@ -88,18 +88,23 @@
      */
     $("form").on("submit", function(event) {
         event.preventDefault();
+
+        // disable search button to prevent additional queries while loading
+        $("#searchButton").attr("disabled", "disabled");
         $("#results").empty();
 
         let query = $("#queryBar").val();
 
         if (query.length == 0) {
-
+            $("#searchButton").removeAttr("disabled");
             console.log("error: no query");
 
         } else {
-            $("#loading").show();
-            $("#loading").css("visibility", "visible");
+            
+            $("#loadingIcon").show();
+            $("#loadingIcon").css("visibility", "visible");
             $("#results").show();
+            
 
             //let url = `${window.location}results`;
             //console.log(window.location.origin);
@@ -109,12 +114,27 @@
                 dataType: 'json',
                 data: {
                     query: query
-                }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    if (errorThrown == "timeout") {
+                        $("#loadingIcon").hide();
+                        $("#loadingIcon").css("visibility", "hidden");
+                        $("#results").show();
+                    }
+
+                    $("#results").html(`
+                        <p class="mx-auto justify-content-center text-start">Search timed out. Try making your query longer or more specific. If the search keeps timing out, the site may be experiencing heavy traffic.</p>
+                    `);
+                },
+                timeout: 15000
             })
             .done(function (result) {
-                $("#loading").hide();
-                $("#loading").css("visibility", "hidden");
+                $("#loadingIcon").hide();
+                $("#loadingIcon").css("visibility", "hidden");
                 $("#results").show();
+                $("#searchButton").removeAttr("disabled");
+
+                
 
                 // get amount of video results
                 let total = 0;
@@ -124,7 +144,12 @@
                     }
                 }
 
-                $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} videos containing "${query}"</p>`);
+                if (total >= 100) {
+                    $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} or more videos containing "${query}"</p>`);
+                } else {
+                    $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} videos containing "${query}"</p>`);
+                }
+                
 
                 if (result.length > 0) {
                     
@@ -137,9 +162,9 @@
                         <nav aria-label="page-navigation">
                             <ul class="pagination">
                                 <li class="page-item">
-                                    <a id="previousPage" class="page-link" aria-label="Previous">
+                                    <button id="previousPage" class="page-link" onclick="this.blur();" aria-label="Previous">
                                         <span aria-hidden="true">&laquo;</span>
-                                    </a>
+                                    </button>
                                 </li>
 
                                 <li class="page-item">
@@ -147,9 +172,9 @@
                                 </li>
 
                                 <li class="page-item">
-                                    <a id="nextPage" class="page-link" aria-label="Next">
+                                    <button id="nextPage" class="page-link" onclick="this.blur();" aria-label="Next">
                                         <span aria-hidden="true">&raquo;</span>
-                                    </a>
+                                    </button>
                                 </li>
                             </ul>
                         </nav>
@@ -210,12 +235,9 @@
                 console.log(result);
             });
 
-            // pagination here
-
-
         }
 
-        // showpage function here
+        // display all the videos for a specified page
         function showPage(page) {
             $("#resultsAccordion").empty();
 
@@ -223,6 +245,10 @@
 
                 let captions = JSON.parse(page[video].captionTrack);
                 let timestamps = new Map();
+
+                // make videoPublishDate human-readable in ISO 8601 format
+                let publishDate = page[video].videoPublishDate.slice(0, 10);
+                //console.log(publishDate);
 
                 // get every occurance of the search phrase in the caption track
                 // NOTE: includes() is case sensitive, so convert captions and query to lowercase first
@@ -256,9 +282,13 @@
                     <div class="bg-dark pt-3 accordion-item" id="${page[video].videoId}">
 
                         <h2 class="accordion-header" id="header-${page[video].videoId}">
-                            <button class="bg-dark bg-gradient text-white accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${page[video].videoId}" aria-expanded="false" aria-controls="collapse-${page[video].videoId}">
-                                <div class="w-100 text-center accordion-header-text">
+                            <button class="bg-dark bg-gradient text-white accordion-button collapsed d-flex" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${page[video].videoId}" aria-expanded="false" aria-controls="collapse-${page[video].videoId}">
+                                <div class="accordion-header-text flex-grow-1">
                                     ${page[video].videoTitle}
+                                </div>
+
+                                <div class="accordion-header-text">
+                                    ${publishDate}
                                 </div>
                             </button>
                         </h2>
@@ -279,7 +309,6 @@
                     width: '720',
                     videoId: page[video].videoId,
                     host: 'https://www.youtube.com'
-                    //host: window.location
                 });
 
                 // append timestamp links to each accordion item
@@ -298,7 +327,6 @@
                     `);
                     
                     $(`a[id*='${key}']`).on("click", function () {
-                        //console.log($(this));
                         player.seekTo(key, true);
                         player.playVideo();
                     });

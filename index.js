@@ -75,7 +75,7 @@ app.get('/results', async (req, res) => {
 
     let query = req.query.query;
 
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ?`;
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? LIMIT 100`;
     let params = [`%${query}%`];
 
     let results = await database.executeSQL(sql, params);
@@ -84,6 +84,7 @@ app.get('/results', async (req, res) => {
         return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
     }
 
+    // at most, we want 10 videos per page of results
     let pages = 0;
     if (results.length > 10) {
         pages = results.length / 10;
@@ -94,22 +95,12 @@ app.get('/results', async (req, res) => {
         resultsPages.push(paginate(results, 10, i));
     }
 
+    // remove the last page if it's empty
+    if (results.length % 10 == 0) {
+        resultsPages.pop();
+    }
+
     res.send(resultsPages);
-});
-
-
-
-// advanced search endpoint todo
-app.get('/library/results', async (req, res) => {
-
-    let query = req.query.query;
-
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? LIMIT 50`;
-    let params = [`%${query}%`];
-
-    let results = await database.executeSQL(sql, params);
-
-    res.send(results);
 });
 
 
