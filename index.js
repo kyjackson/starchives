@@ -75,8 +75,36 @@ app.get('/results', async (req, res) => {
 
     let query = req.query.query;
 
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? LIMIT 100`;
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE (captionTrack LIKE ?) `;
     let params = [`%${query}%`];
+
+    console.log(req.query);
+
+    if (req.query.date) {
+        sql += "AND videoPublishDate LIKE ?"
+        params.push(`${req.query.date}%`);
+        //console.log(req.query.date);
+    }
+
+    if (req.query.duration) {
+        // sql += "AND videoDuration LIKE ? "
+        // params.push(req.query.date);
+        console.log(req.query.duration);
+    }
+
+    if (req.query.orderBy) {
+        // sql += "ORDER BY ? "
+        // params.push(req.query.orderBy);
+        console.log(req.query.orderBy);
+    }
+
+    if (req.query.order) {
+        // sql += "DESC "
+        // params.push(req.query.order);
+        console.log(req.query.order);
+    }
+
+    sql += "LIMIT 100";
 
     let results = await database.executeSQL(sql, params);
 
