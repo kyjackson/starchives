@@ -9,13 +9,22 @@
                 <h1 class="display-6 fw">Enter Query</h1>
                 <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among the videos uploaded to the Star Citizen Youtube channel.</p>
 
+                <!-- Search bar and filters switch -->
                 <div class="row justify-content-center align-items-center">
                     <div class="col-6 my-4">
-                        <input type="text" class="form-control text-center" id="searchBar" name="query" placeholder="Search...">
-                    </div>   
+                        <input id="searchBar" type="text" class="form-control text-center" name="query" placeholder="Search...">
+                    </div>
+
+                    <div class="col-1 my-4">
+                        <div class="form-check form-switch">
+                            <input id="filterSwitch" class="form-check-input" type="checkbox" role="switch">
+                            <label class="form-check-label" for="filterSwitch">Filters</label>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="row justify-content-center align-items-center">
+                <!-- Filter labels -->
+                <div class="filters row justify-content-center align-items-center">
                     <div class="col-2">
                         <span>Published:</span>
                     </div>
@@ -29,7 +38,8 @@
                     </div>
                 </div>
 
-                <div class="row justify-content-center align-items-center">
+                <!-- Filters -->
+                <div class="filters row justify-content-center align-items-center">
                     <div class="col-2">
                         <select id="publishDate" class="form-select text-center" aria-label="Default select example">
                             <option value="" selected>Any time</option>
@@ -53,27 +63,29 @@
                             <option value="1">> 60 min</option>
                             <option value="2">30 - 60 min</option>
                             <option value="3">15 - 30 min</option>
-                            <option value="3">< 15 min</option>
+                            <option value="4">&lt; 15 min</option>
                         </select>
                     </div>
 
                     <div class="col-2">
                         <select id="orderBy" class="form-select text-center" aria-label="Default select example">
                             <option value="" selected>Default</option>
-                            <option value="videoPublishDate">Date</option>
-                            <option value="videoViewCount">Views</option>
-                            <option value="videoLikeCount">Likes</option>
+                            <option value="1">Date</option>
+                            <option value="2">Views</option>
+                            <option value="3">Likes</option>
                         </select>
                     </div> 
                 </div>
 
-                <div class="row justify-content-center align-items-center">
+                <!-- Toggle order by descending results -->
+                <div class="filters row justify-content-center align-items-center">
                     <div class="col-2 mt-4 form-check">
-                        <input id="order" class="form-check-input mx-0" type="checkbox" value="DESC" disabled>
+                        <input id="order" class="form-check-input mx-0" type="checkbox" value="ASC" disabled>
                         <label class="form-check-label" for="order">Descending</label>
                     </div>
                 </div>
 
+                <!-- Search button -->
                 <button id="searchButton" class="btn btn-light btn-lg mt-4" type="submit">
                     Search Archive
                     <span id="loadingIcon" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -125,7 +137,7 @@
 
 </div>
 
-<script> // todo: page numbers for results
+<script>
 
     // first set up Youtube Iframe API
     let tag = document.createElement('script');
@@ -140,7 +152,23 @@
     }
 
     $("#loadingIcon").hide();
-    //$("#results").hide();
+    $(".filters").hide();
+
+    /**
+     * Enable/disable filters if "Filter" switch is toggled.
+     */
+    $("#filterSwitch").prop("checked", false);
+    $("#filterSwitch").on("change", function(event) {
+        if (!$(".filters").is(":visible")) {
+            $(".filters").toggle(true);
+        } else {
+            $(".filters").toggle(false);
+            $("#publishDate").val("");
+            $("#duration").val("");
+            $("#orderBy").val("");
+            $("#order").prop("checked", false);
+        }   
+    });
 
     /**
      * Allow "Descending" filter only when a column order is specified.
@@ -151,6 +179,17 @@
         } else {
             $("#order").prop("checked", false);
             $("#order").attr("disabled", "disabled");
+        }
+    });
+
+    /**
+     * Change value of "Descending".
+     */
+    $("#order").on("change", function(event) {
+        if ($("#order").val() == "DESC") {
+            $("#order").val("ASC");
+        } else {
+            $("#order").val("DESC");
         }
     });
 
@@ -168,10 +207,10 @@
         let videoPublishDate = $("#publishDate").val();
         let videoDuration = $("#duration").val();
         let orderResultsBy = $("#orderBy").val();
-        let orderResults = "";
-        if ($("#order").prop("checked")) {
-            orderResults = $("#order").val();
-        }
+        let orderResults = $("#order").val();
+        // if ($("#order").prop("checked")) {
+        //     orderResults = $("#order").val();
+        // }
         
 
 
@@ -203,6 +242,7 @@
                     if (errorThrown == "timeout") {
                         $("#loadingIcon").hide();
                         $("#loadingIcon").css("visibility", "hidden");
+                        $("#searchButton").removeAttr("disabled");
                         $("#results").show();
                     }
 

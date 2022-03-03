@@ -582,6 +582,24 @@ async function executeSQL(sql, params) {
 
 
 
+// workaround for problems using STR_TO_DATE
+async function executeSQLFromServer(sql, params) {
+
+    return new Promise(async function(resolve, reject) {
+        //let conn = dbConnection();
+        await pool.getConnection(async function(err, conn) {
+            conn.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function(err, rows, fields) {
+                if (err) throw err;
+                resolve(rows);
+            });
+    
+            conn.release();
+        });  
+    });
+}
+
+
+
 // example function for accessing a database pool in an alternative way
 function dbConnection() {
 
@@ -613,5 +631,6 @@ module.exports = {
     updateDbVideos,
     updateDbCaptions,
     tableUpdate,
-    executeSQL
+    executeSQL,
+    executeSQLFromServer
 };
