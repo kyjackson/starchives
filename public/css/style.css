@@ -26,11 +26,13 @@
 }
 
 /*
- * Search button and results
+ * Search window and results
  */
+.fixed {
+    position: fixed;
+}
 
-#loading
-{
+#loading {
     visibility: hidden;
     /* display: none; */
 }

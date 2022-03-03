@@ -31,7 +31,7 @@ app.listen(8080, () => {
 });
 
 // in one fell swoop, update everything
-update();
+//update();
 
 // database update should occur once every week at midnight
 async function update() {
@@ -75,10 +75,62 @@ app.get('/results', async (req, res) => {
 
     let query = req.query.query;
 
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? LIMIT 100`;
+    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
     let params = [`%${query}%`];
 
-    let results = await database.executeSQL(sql, params);
+    if (req.query.date) {
+        sql += 'AND videoPublishDate LIKE ? ';
+        params.push(`${req.query.date}%`);
+    }
+
+    if (req.query.duration) {
+        switch (req.query.duration) {
+            case "1":
+                sql += 'AND videoDuration LIKE ? ';
+                break;
+            case "2":
+                sql += `AND videoDuration NOT LIKE ? AND (videoDuration BETWEEN CONCAT('PT', 30, 'M%') AND CONCAT('PT', 60, 'M%')) `;
+                break;
+            case "3":
+                sql += `AND videoDuration NOT LIKE ? AND (videoDuration BETWEEN CONCAT('PT', 15, 'M%') AND CONCAT('PT', 30, 'M%')) `;
+                break;
+            case "4":
+                sql += `AND videoDuration NOT LIKE ? AND (STR_TO_DATE(videoDuration, 'PT%iM%sS') < '00:15:00') `;
+                break;
+            default:
+        }
+        params.push(`PT%H%`);
+    }
+
+    if (req.query.orderBy) {
+        switch (req.query.orderBy) {
+            case "1":
+                sql += 'ORDER BY videoPublishDate ';
+                break;
+            case "2":
+                sql += `ORDER BY videoViewCount `;
+                break;
+            case "3":
+                sql += `ORDER BY videoLikeCount `;
+                break;
+            default:
+        }
+
+        if (req.query.order == "ASC") {
+            sql += 'ASC ';
+        } else {
+            sql += 'DESC ';
+        }
+    }
+
+    // if (req.query.order) {
+    //     sql += "? "
+    //     params.push(req.query.order);
+    // }
+
+    sql += "LIMIT 100;";
+    console.log(sql);
+    let results = await database.executeSQLFromServer(sql, params);
 
     function paginate(array, pageSize, pageNumber) {
         return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
@@ -86,17 +138,17 @@ app.get('/results', async (req, res) => {
 
     // at most, we want 10 videos per page of results
     let pages = 0;
-    if (results.length > 10) {
-        pages = results.length / 10;
+    if (results[1].length > 10) {
+        pages = results[1].length / 10;
     }
     
     let resultsPages = [];
     for (let i = 0; i <= pages; i++) {
-        resultsPages.push(paginate(results, 10, i));
+        resultsPages.push(paginate(results[1], 10, i));
     }
 
     // remove the last page if it's empty
-    if (results.length % 10 == 0) {
+    if (resultsPages[resultsPages.length-1].length == 0) {
         resultsPages.pop();
     }
 

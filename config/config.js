@@ -16,7 +16,8 @@ const pool = mysql.createPool({
     host: "remotemysql.com",
     user: "mrNBNedB7e",
     password: "LlEFgvnh9P",
-    database: "mrNBNedB7e"
+    database: "mrNBNedB7e",
+    multipleStatements: true
 });
 
 // simplify youtube api access

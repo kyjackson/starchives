@@ -5,17 +5,88 @@
     <!-- Jumbotron card containing search bar -->
     <div class="p-4 mb-4 text-white bg-dark rounded-3">
         <div class="p-4 container-fluid" id="search">
-            <form id="searchbar" action="/results" method="GET">
+            <form id="searchWindow">
                 <h1 class="display-6 fw">Enter Query</h1>
                 <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among the videos uploaded to the Star Citizen Youtube channel.</p>
 
-                <div class="row justify-content-center">
-                    <div class="my-4 col-9">
-                    <input type="text" class="form-control text-center" id="queryBar" name="query" placeholder="Search...">
+                <!-- Search bar and filters switch -->
+                <div class="row justify-content-center align-items-center">
+                    <div class="col-6 my-4">
+                        <input id="searchBar" type="text" class="form-control text-center" name="query" placeholder="Search...">
+                    </div>
+
+                    <div class="col-1 my-4">
+                        <div class="form-check form-switch">
+                            <input id="filterSwitch" class="form-check-input" type="checkbox" role="switch">
+                            <label class="form-check-label" for="filterSwitch">Filters</label>
+                        </div>
                     </div>
                 </div>
 
-                <button id="searchButton" class="btn btn-light btn-lg" type="submit">
+                <!-- Filter labels -->
+                <div class="filters row justify-content-center align-items-center">
+                    <div class="col-2">
+                        <span>Published:</span>
+                    </div>
+
+                    <div class="col-2">
+                        <span>Duration:</span>
+                    </div>
+
+                    <div class="col-2">
+                        <span>Order By:</span>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters row justify-content-center align-items-center">
+                    <div class="col-2">
+                        <select id="publishDate" class="form-select text-center" aria-label="Default select example">
+                            <option value="" selected>Any time</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
+                            <option value="2019">2019</option>
+                            <option value="2018">2018</option>
+                            <option value="2017">2017</option>
+                            <option value="2016">2016</option>
+                            <option value="2015">2015</option>
+                            <option value="2014">2014</option>
+                            <option value="2013">2013</option>
+                            <option value="2012">2012</option>
+                        </select>
+                    </div>
+
+                    <div class="col-2">
+                        <select id="duration" class="form-select text-center" aria-label="Default select example">
+                            <option value="" selected>Any duration</option>
+                            <option value="1">> 60 min</option>
+                            <option value="2">30 - 60 min</option>
+                            <option value="3">15 - 30 min</option>
+                            <option value="4">&lt; 15 min</option>
+                        </select>
+                    </div>
+
+                    <div class="col-2">
+                        <select id="orderBy" class="form-select text-center" aria-label="Default select example">
+                            <option value="" selected>Default</option>
+                            <option value="1">Date</option>
+                            <option value="2">Views</option>
+                            <option value="3">Likes</option>
+                        </select>
+                    </div> 
+                </div>
+
+                <!-- Toggle order by descending results -->
+                <div class="filters row justify-content-center align-items-center">
+                    <div class="col-2 mt-4 form-check">
+                        <input id="order" class="form-check-input mx-0" type="checkbox" value="ASC" disabled>
+                        <label class="form-check-label" for="order">Descending</label>
+                    </div>
+                </div>
+
+                <!-- Search button -->
+                <button id="searchButton" class="btn btn-light btn-lg mt-4" type="submit">
                     Search Archive
                     <span id="loadingIcon" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 </button>
@@ -66,7 +137,7 @@
 
 </div>
 
-<script> // todo: page numbers for results
+<script>
 
     // first set up Youtube Iframe API
     let tag = document.createElement('script');
@@ -81,7 +152,46 @@
     }
 
     $("#loadingIcon").hide();
-    //$("#results").hide();
+    $(".filters").hide();
+
+    /**
+     * Enable/disable filters if "Filter" switch is toggled.
+     */
+    $("#filterSwitch").prop("checked", false);
+    $("#filterSwitch").on("change", function(event) {
+        if (!$(".filters").is(":visible")) {
+            $(".filters").toggle(true);
+        } else {
+            $(".filters").toggle(false);
+            $("#publishDate").val("");
+            $("#duration").val("");
+            $("#orderBy").val("");
+            $("#order").prop("checked", false);
+        }   
+    });
+
+    /**
+     * Allow "Descending" filter only when a column order is specified.
+     */
+    $("#orderBy").on("change", function(event) {
+        if ($("#orderBy").val()) {
+            $("#order").removeAttr("disabled");
+        } else {
+            $("#order").prop("checked", false);
+            $("#order").attr("disabled", "disabled");
+        }
+    });
+
+    /**
+     * Change value of "Descending".
+     */
+    $("#order").on("change", function(event) {
+        if ($("#order").val() == "DESC") {
+            $("#order").val("ASC");
+        } else {
+            $("#order").val("DESC");
+        }
+    });
 
     /**
      * Send a GET request to our own API endpoint for retrieving relevant captions from our database.
@@ -93,9 +203,18 @@
         $("#searchButton").attr("disabled", "disabled");
         $("#results").empty();
 
-        let query = $("#queryBar").val();
+        let keyword = $("#searchBar").val();
+        let videoPublishDate = $("#publishDate").val();
+        let videoDuration = $("#duration").val();
+        let orderResultsBy = $("#orderBy").val();
+        let orderResults = $("#order").val();
+        // if ($("#order").prop("checked")) {
+        //     orderResults = $("#order").val();
+        // }
+        
 
-        if (query.length == 0) {
+
+        if (keyword.length == 0) {
             $("#searchButton").removeAttr("disabled");
             console.log("error: no query");
 
@@ -113,12 +232,17 @@
                 url: `${window.location.origin}/results`,
                 dataType: 'json',
                 data: {
-                    query: query
+                    query: keyword,
+                    date: videoPublishDate,
+                    duration: videoDuration,
+                    orderBy: orderResultsBy,
+                    order: orderResults
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     if (errorThrown == "timeout") {
                         $("#loadingIcon").hide();
                         $("#loadingIcon").css("visibility", "hidden");
+                        $("#searchButton").removeAttr("disabled");
                         $("#results").show();
                     }
 
@@ -145,9 +269,9 @@
                 }
 
                 if (total >= 100) {
-                    $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} or more videos containing "${query}"</p>`);
+                    $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} or more videos containing "${keyword}"</p>`);
                 } else {
-                    $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} videos containing "${query}"</p>`);
+                    $("#results").html(`<p class="mx-auto justify-content-center text-start">Found ${total} videos containing "${keyword}"</p>`);
                 }
                 
 
@@ -253,7 +377,7 @@
                 // get every occurance of the search phrase in the caption track
                 // NOTE: includes() is case sensitive, so convert captions and query to lowercase first
                 captions.forEach(function(segment, index) {
-                    if (segment.text.toLowerCase().includes(query.toLowerCase())) {
+                    if (segment.text.toLowerCase().includes(keyword.toLowerCase())) {
                         let longSegment = segment.text;
                         
                         if (captions[index-1] !== undefined) {
