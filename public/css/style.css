@@ -43,6 +43,21 @@
 }
 
 /*
+ * About page
+ */
+#faqAccordion a {
+    color: #fff;
+}
+
+.statement {
+    font-size: .8rem;
+}
+
+.statement a {
+    color: #fff;
+}
+
+/*
  * Footer
  */
 
