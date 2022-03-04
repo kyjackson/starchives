@@ -10,6 +10,7 @@ const cookieParser = require('cookie-parser');
 const config = require('./config/config');
 const api = require('./library/api');
 const database = require('./library/database');
+const stats = require('./library/stats');
 
 // create the Express application
 const app = express();
@@ -18,6 +19,9 @@ const app = express();
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use(cookieParser());
+
+// initialize variable for sending stats to the stats page
+let statsObject;
 
 
 
@@ -31,14 +35,22 @@ app.listen(8080, () => {
 });
 
 // in one fell swoop, update everything
-//update();
+//updateDb();
+
+// update automatically at regular interval
+async function automatedUpdate() {
+
+}
 
 // database update should occur once every week at midnight
-async function update() {
+async function updateDb() {
     await database.updateDb();
 }
 
-// stats update should occur once every hour
+// stats update should occur 1 hour after the database update
+async function updateStats() {
+    
+}
 
 
 
@@ -53,7 +65,9 @@ app.get('/', (req, res) => {
 
 // stats route
 app.get('/stats', (req, res) => {
-  res.render('stats');
+    res.render('stats', {
+        "stats": statsObject
+    });
 });
 
 // about route
@@ -123,11 +137,6 @@ app.get('/results', async (req, res) => {
         }
     }
 
-    // if (req.query.order) {
-    //     sql += "? "
-    //     params.push(req.query.order);
-    // }
-
     sql += "LIMIT 100;";
     console.log(sql);
     let results = await database.executeSQLFromServer(sql, params);
@@ -138,13 +147,17 @@ app.get('/results', async (req, res) => {
 
     // at most, we want 10 videos per page of results
     let pages = 0;
-    if (results[1].length > 10) {
-        pages = results[1].length / 10;
+    let pageSize = 10;
+
+    // note: when using the function executeSQLFromServer (which includes an additional SQL statement in the query),
+    //       results will return an additonal outer array, therefore we use results[1] to access the correct info.
+    if (results[1].length > pageSize) {
+        pages = results[1].length / pageSize;
     }
     
     let resultsPages = [];
     for (let i = 0; i <= pages; i++) {
-        resultsPages.push(paginate(results[1], 10, i));
+        resultsPages.push(paginate(results[1], pageSize, i));
     }
 
     // remove the last page if it's empty

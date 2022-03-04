@@ -44,7 +44,7 @@ event.on("interrupt", function listener() {
 
 
 
-/* todo
+/* 
  * Gather info from every updateDb function and update the database with it using SQL
  */
 async function updateDb() {
@@ -64,8 +64,6 @@ async function updateDb() {
     //await timer(3000);
     //updateDbCaptions(key, uploads);
 }
-
-//updateDb();
 
 /**
  * Get info for all playlists, reformat it for the database, and update database if necessary
@@ -396,7 +394,6 @@ async function updateDbCaptions(key, playlistId) {
                 console.log(`Caption track for this video is already in the database. Skipping...`);
             }
         }
-        //console.log(i);
     }
 
     event.emit("interrupt");
@@ -427,8 +424,6 @@ async function updateDbCaptions(key, playlistId) {
             ]
         }
     }
-    
-    //console.log(captionObjects.length);
 
     // update the table with the correctly formatted objects using SQL
     await tableUpdate("captions", captionObjects, sql);

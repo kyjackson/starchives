@@ -1,7 +1,74 @@
 <%- include("partials/header.ejs") %>
 
-<h1>Coming soon</h1>
+<div class="container px-0 py-4">
 
+    <!-- Jumbotron card containing all sections between header and footer -->
+    <div class="col p-4 text-white bg-dark rounded-3">
 
+        <!-- Container for columns in upper half of card -->
+        <div class="d-flex container-fluid">
+
+            <!-- Project statement -->
+            <div id="projectStatement" class="p-4 container-fluid" id="search">
+                <h2>Purpose</h2>
+                <p class="text-start">
+                    At the time of writing this, there are over 1500 videos uploaded to the Star Citizen YouTube 
+                    channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, 
+                    people will often bring up something mentioned in one or more videos uploaded years ago. With 
+                    multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to 
+                    provide sources for their claims will have an exceedingly difficult time doing so if they don't 
+                    know the particular video.
+                </p>
+
+                <p class="text-start">
+                    With the help of YouTube's auto-generated captions, this changes. This site allows anyone to 
+                    search a database of all videos on the Star Citizen channel and their associated captions to 
+                    quickly find the info they're searching for. Full transcriptions of each video are provided, 
+                    along with timestamps for search terms that have a match. Searching for any mention of future 
+                    plans, bespoke, or ships that punch above their weight class should now take minutes, not hours, 
+                    of combing through videos. Additionally, search stats and video stats will soon be provided so 
+                    anyone can see what the community has been most interested in.
+                </p>
+            </div>
+
+            <!-- FAQ -->
+            <div id="faq" class="py-4 px-5 container-fluid" id="search">
+                <h2>FAQ</h2>
+                <!-- Questions are appended to this accordion -->
+                <div id="faqAccordion" class="mx-auto w-100 accordion accordion-flush"></div>
+            </div>
+            
+        </div>
+
+        <hr>
+
+        <!-- Container for personal statement -->
+        <div class="d-flex justify-content-start">
+
+            <!-- Personal statement -->
+            <div id="authorStatement" class="p-2 container-fluid" id="search">
+                <h5 class="text-start">Developer's Note</h5>
+                
+                <p class="text-start statement">
+                    Thank you for visiting my site. The amazing developers at CIG and the warm Star Citizen community 
+                    both inspire me every day to pursue my goals in software 
+                    development. This site is among the first of hopefully many fruits to result from that inspiration.
+                    <br><br>
+                    If you found it helpful as a prospective player, consider signing up at RSI with my referral code: 
+                    <a href="https://robertsspaceindustries.com/enlist?referral=STAR-NRZ7-WNLV">STAR-NRZ7-WNLV</a>
+                    <br>
+                    If you found it useful as a fellow fan of the game, consider donating to help keep it online: 
+                    <br>
+                    If you have any feedback, questions, or job offers, feel free to <a href="mailto:admin@starchives.org">contact me</a>.
+                </p>
+            </div>
+            
+        </div>
+
+    </div>
+
+</div>
+
+<script src="js/aboutScript.js"></script>
 
 <%- include("partials/footer.ejs") %>

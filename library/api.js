@@ -24,7 +24,7 @@ const {
  * Helpful notes for future reference
  * ______________________________________
  * 
- * Access tree from channel to caption:
+ * Access order from channel to caption:
  * 
  * channel > playlists > playlistItems > videos > caption
  * 
@@ -101,8 +101,6 @@ async function getPlaylists(key, channelId, pageToken, pageResults) {
         }
             
         var playlists = pageResults;
-        
-        //console.log(playlists);
 
         // return unfiltered info for all playlists owned by the channel
         return playlists;
@@ -152,8 +150,6 @@ async function getPlaylistItems(key, playlistId, pageToken, pageResults) {
         }
             
         var playlistItems = pageResults;
-        
-        //console.log(playlistItems);
 
         // return unfiltered info for all playlistItems in a playlist
         return playlistItems;
@@ -179,8 +175,6 @@ async function getVideo(key, videoId) {
     });
 
     let video = res.data.items[0];       // get first video
-
-    //console.log(videoInfo);
 
     // return unfiltered video info
     return video;
@@ -227,8 +221,6 @@ async function getCaptions(videoId) {
     //         console.log(err);
     //     }
     // });
-
-    //console.log(captionTrack);
 
     // return captions of the specified video as a stringified JSON
     return captionTrack;
