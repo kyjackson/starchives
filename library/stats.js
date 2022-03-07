@@ -21,6 +21,10 @@ async function updateStats() {
 
 }
 
+async function mostViews() {
+    //let sql = `SELECT FROM videos WHERE videoViewCount `;
+}
+
 
 
 module.exports = {
