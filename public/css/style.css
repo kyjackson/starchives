@@ -25,6 +25,8 @@
   border-bottom-color: #fff;
 }
 
+
+
 /*
  * Search window and results
  */
@@ -42,6 +44,8 @@
     display: none;
 }
 
+
+
 /*
  * About page
  */
@@ -56,6 +60,8 @@
 .statement a {
     color: #fff;
 }
+
+
 
 /*
  * Footer
@@ -81,3 +87,18 @@ footer .logo {
     text-decoration: none;
     /* object-fit: cover; */
 }
+
+
+
+/*
+ * Special styling for headers that should be separated from their
+ * following content by an hr
+ */
+p.divider {
+    margin-bottom: 0;
+    padding: 0;
+}
+
+hr.divider { 
+    margin-top: 0em;
+} 

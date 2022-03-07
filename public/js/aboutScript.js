@@ -42,25 +42,37 @@ const q3 = {
 };
 
 const q4 = {
+    title: "I still can't find what I'm looking for after several searches.",
+    answer: `It's possible that what you're looking for may have been mentioned
+        in a monthly report, commlink, or some other resource that isn't a video. 
+        <br><br>
+        If you're sure this isn't the case,
+        the captions relating to your query may not exist or have been transcribed incorrectly. Check out the awesome
+        <a href="https://docs.google.com/spreadsheets/d/1_BrcpQjSPGFvn51F46PibH8ccC30RWjyI62Fyiif2pA/">SC Dev Segment Mega Index</a>, 
+        created by a fellow member of the Star Citizen community, for more detailed video info. 
+        There you can find videos organized by subject, the particular developers featured in each video, and more.`
+};
+
+const q5 = {
     title: "What are the dashes in the captions?",
     answer: `When matching captions are found, they also include the previous and next lines in the transcript.
         For better clarity and readability, I've separated these lines using the dashes.`
 };
 
-const q5 = {
+const q6 = {
     title: "Where can I submit feedback?",
     answer: `Please submit any and all feedback, especially constructive criticisms, to <a href="mailto:admin@starchives.org">admin@starchives.org</a>,
         with the subject 'Starchives Feedback - [your name]' so I can get back to you easily if necessary.`
 };
 
-const q6 = {
+const q7 = {
     title: "Why is there a maximum of 100 results?",
     answer: `The more results there are, the longer the responses take. This can be especially problematic
         if several users are trying to search with broad terms at the same time, so to keep response times reasonable,
         I've set the maximum results per query to 100 for now, with a 15-second timeout.`
 };
 
-let questions = [q1, q2, q3, q4, q5, q6];
+let questions = [q1, q2, q3, q4, q5, q6, q7];
 
 console.log("test");
 

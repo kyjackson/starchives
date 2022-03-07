@@ -3,7 +3,6 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 //const fs = require('fs');
 //const buffer = require('buffer');
-
 //const https = require('https');
 
 // initialize local modules
@@ -36,6 +35,7 @@ app.listen(8080, () => {
 
 // in one fell swoop, update everything
 //updateDb();
+//updateStats();
 
 // update automatically at regular interval
 async function automatedUpdate() {
@@ -49,7 +49,7 @@ async function updateDb() {
 
 // stats update should occur 1 hour after the database update
 async function updateStats() {
-    
+    statsObject = await stats.updateStats();
 }
 
 
@@ -88,9 +88,36 @@ app.get('/results', async (req, res) => {
     //res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true });
 
     let query = req.query.query;
+    let sql = "";
+    let params = [];
 
-    let sql = `SELECT * FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
-    let params = [`%${query}%`];
+    if (query) {
+        sql = `SELECT *, videoDuration,
+        CASE
+            WHEN videoDuration LIKE 'PT%H%M%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM%sS')
+            WHEN videoDuration LIKE 'PT%H%M' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM')
+            WHEN videoDuration LIKE 'PT%H%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%sS')
+            WHEN videoDuration LIKE 'PT%H' THEN STR_TO_DATE(videoDuration, 'PT%hH')
+            WHEN videoDuration LIKE 'PT%M%S' THEN STR_TO_DATE(videoDuration, 'PT%iM%sS')
+            WHEN videoDuration LIKE 'PT%M' THEN STR_TO_DATE(videoDuration, 'PT%iM')
+            WHEN videoDuration LIKE 'PT%S' THEN STR_TO_DATE(videoDuration, 'PT%sS')
+        END AS duration
+        FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
+        params.push(`%${query}%`);
+    } else {
+        sql = `SELECT *, videoDuration,
+        CASE
+            WHEN videoDuration LIKE 'PT%H%M%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM%sS')
+            WHEN videoDuration LIKE 'PT%H%M' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM')
+            WHEN videoDuration LIKE 'PT%H%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%sS')
+            WHEN videoDuration LIKE 'PT%H' THEN STR_TO_DATE(videoDuration, 'PT%hH')
+            WHEN videoDuration LIKE 'PT%M%S' THEN STR_TO_DATE(videoDuration, 'PT%iM%sS')
+            WHEN videoDuration LIKE 'PT%M' THEN STR_TO_DATE(videoDuration, 'PT%iM')
+            WHEN videoDuration LIKE 'PT%S' THEN STR_TO_DATE(videoDuration, 'PT%sS')
+        END AS duration
+        FROM videos WHERE 1 `;
+    }
+    
 
     if (req.query.date) {
         sql += 'AND videoPublishDate LIKE ? ';
@@ -126,6 +153,22 @@ app.get('/results', async (req, res) => {
                 break;
             case "3":
                 sql += `ORDER BY videoLikeCount `;
+                break;
+            case "4": // STR_TO_DATE(videoDuration, 'PT%hH%iM%sS') AS duration
+                // reference: https://stackoverflow.com/questions/33172258/get-iso-8601scorm-2004-duration-format-in-seconds-using-mysql
+                sql += `ORDER BY duration `;
+                    // `
+                    // ${sql.slice(0, 8)}, videoDuration, 
+                    // CASE
+                    //     WHEN videoDuration LIKE 'PT%H%M%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM%sS')
+                    //     WHEN videoDuration LIKE 'PT%H%M' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM')
+                    //     WHEN videoDuration LIKE 'PT%H%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%sS')
+                    //     WHEN videoDuration LIKE 'PT%H' THEN STR_TO_DATE(videoDuration, 'PT%hH')
+                    //     WHEN videoDuration LIKE 'PT%M%S' THEN STR_TO_DATE(videoDuration, 'PT%iM%sS')
+                    //     WHEN videoDuration LIKE 'PT%M' THEN STR_TO_DATE(videoDuration, 'PT%iM')
+                    //     WHEN videoDuration LIKE 'PT%S' THEN STR_TO_DATE(videoDuration, 'PT%sS')
+                    // END AS duration
+                    // ${sql.slice(9)}ORDER BY duration `;
                 break;
             default:
         }
