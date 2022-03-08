@@ -87,6 +87,83 @@ app.get('/results', async (req, res) => {
     //response.setHeader('Set-Cookie', ['type=ninja', 'language=javascript']);
     //res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true });
 
+    // get sql and params from buildQuery
+    let sql = buildQuery(req).bsql;
+    let params = buildQuery(req).bparams;
+
+    sql += "LIMIT 10 ";
+    
+    if (req.query.page) {
+        let page = req.query.page * 10;
+        sql += `OFFSET ${page}`;
+    }
+
+    let results = await database.executeSQLFromServer(sql, params);
+
+    function paginate(array, pageSize, pageNumber) {
+        return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
+    }
+
+    // at most, we want 10 videos per page of results
+    let pages = 0;
+    let pageSize = 10;
+
+    // note: when using the function executeSQLFromServer (which includes an additional SQL statement in the query),
+    //       results will return an additonal outer array, therefore we use results[1] to access the correct info.
+    if (results[1].length > pageSize) {
+        pages = results[1].length / pageSize;
+    }
+    
+    let resultsPages = [];
+    for (let i = 0; i <= pages; i++) {
+        resultsPages.push(paginate(results[1], pageSize, i));
+    }
+
+    // remove the last page if it's empty
+    if (resultsPages[resultsPages.length-1].length == 0) {
+        resultsPages.pop();
+    }
+
+    res.send(resultsPages);
+});
+
+
+
+// get length of results separately from actual results to improve response times
+app.get('/resultsLength', async (req, res) => {
+
+    // get sql and params from buildQuery
+    let sql = buildQuery(req).bsql;
+    let params = buildQuery(req).bparams;
+
+
+    sql += "LIMIT 100;";
+    let results = await database.executeSQLFromServer(sql, params);
+    let resultsLength = {
+        length: results[1].length
+    };
+
+    res.send(resultsLength);
+});
+
+
+
+// endpoint testing
+app.get('/playlists', async (req, res) => {
+    // get playlists
+    let sql = "SELECT * FROM playlists";
+    let results = await database.executeSQL(sql);
+
+    res.send(results);
+})
+
+
+
+//----------------Endpoint helper functions----------------
+
+
+
+function buildQuery(req) {
     let query = req.query.query;
     let sql = "";
     let params = [];
@@ -180,66 +257,10 @@ app.get('/results', async (req, res) => {
         }
     }
 
-    sql += "LIMIT 100;";
-    console.log(sql);
-    let results = await database.executeSQLFromServer(sql, params);
-
-    function paginate(array, pageSize, pageNumber) {
-        return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
+    let builtQuery = {
+        bsql: sql,
+        bparams: params
     }
 
-    // at most, we want 10 videos per page of results
-    let pages = 0;
-    let pageSize = 10;
-
-    // note: when using the function executeSQLFromServer (which includes an additional SQL statement in the query),
-    //       results will return an additonal outer array, therefore we use results[1] to access the correct info.
-    if (results[1].length > pageSize) {
-        pages = results[1].length / pageSize;
-    }
-    
-    let resultsPages = [];
-    for (let i = 0; i <= pages; i++) {
-        resultsPages.push(paginate(results[1], pageSize, i));
-    }
-
-    // remove the last page if it's empty
-    if (resultsPages[resultsPages.length-1].length == 0) {
-        resultsPages.pop();
-    }
-
-    res.send(resultsPages);
-});
-
-
-
-// endpoint testing
-app.get('/playlists', async (req, res) => {
-    // get playlists
-    let sql = "SELECT * FROM playlists";
-    let results = await database.executeSQL(sql);
-
-    res.send(results);
-})
-
-//search results route
-// app.get("/results", async function(req, res) {
-
-//   let term = req.query.keyword;
-
-//   let sql = `SELECT videoId FROM captions WHERE captionTrack LIKE ?`;
-//   let params = [`%${term}%`]
-
-//   if (req.query.authorId) { //if author was selected (if authorId has any value)
-//     sql += "AND authorId = ? ";
-//     params.push(req.query.authorId);
-//   }
-
-//   if (req.query.category) {
-//     sql += "AND category = ? ";
-//     params.push(req.query.category);
-//   }
-
-//   let rows = await database.executeSQL(sql, params);
-//   res.render('results', { "rows": rows });
-// });
+    return builtQuery;
+}
