@@ -47,11 +47,6 @@ async function updateDb() {
     await database.updateDb();
 }
 
-// stats update should occur 1 hour after the database update
-async function updateStats() {
-    statsObject = await stats.updateStats();
-}
-
 
 
 //----------------Routes----------------
@@ -61,13 +56,6 @@ async function updateStats() {
 // home route
 app.get('/', (req, res) => {
     res.render('home');
-});
-
-// stats route
-app.get('/stats', (req, res) => {
-    res.render('stats', {
-        "stats": statsObject
-    });
 });
 
 // about route
@@ -136,8 +124,9 @@ app.get('/resultsLength', async (req, res) => {
     let sql = buildQuery(req).bsql;
     let params = buildQuery(req).bparams;
 
+    sql = sql.replace("*", "videoId");
 
-    sql += "LIMIT 100;";
+    //sql += "LIMIT 100;";
     let results = await database.executeSQLFromServer(sql, params);
     let resultsLength = {
         length: results[1].length

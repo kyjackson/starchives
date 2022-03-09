@@ -18,6 +18,7 @@ function onYouTubeIframeAPIReady() {
 
 $("#loadingIcon").hide();
 $(".filters").hide();
+$("#resultHeader").hide();
 
 // ensure default order is ascending every time the page is loaded
 $("#order").val("ASC"); 
@@ -73,13 +74,15 @@ $("#order").on("change", function(event) {
 /**
  * Send a GET request to our own API endpoint for retrieving relevant captions from our database.
  */
-let resultsFound = false;
+let resultsLengthFound = false;
+let totalPages = 0;
 let dataToSend = {};
 $("form").on("submit", function(event) {
     event.preventDefault();
 
     // disable search button to prevent additional queries while loading
     $("#searchButton").attr("disabled", "disabled");
+    $("#resultHeader").hide();
     $("#results").empty();
 
     // get values of search bar and filter ready for ajax
@@ -103,7 +106,8 @@ $("form").on("submit", function(event) {
     $("#loadingIcon").css("visibility", "visible");
     //$("#results").show();
     
-    resultsFound = false;
+    resultsLengthFound = false;
+    totalPages = 0;
     getResults(dataToSend);
     getResultsLength(dataToSend);
     
@@ -135,12 +139,15 @@ function getResults(dataToSend) {
             }
         },
         success: function (result) {
-            if (!resultsFound) {
-                $("#results").html(`
-                    <p id="resultHeader" class="mx-auto justify-content-center text-start">
-                        Finding more videos containing "${dataToSend.query}"...
-                    </p>
+            // if (!resultsLengthFound) {
+            //     $("#resultHeader").html(`Finding more videos containing "${dataToSend.query}"...`);
+            // }
+            
+            $("#resultHeader").show();
+            if (result.length > 0) {
 
+                // just update the pageNavBar if this query came from switching pages
+                $("#results").html(`
                     <div id="pageNavBar" class="mx-auto justify-content-end">
                         <nav aria-label="page-navigation">
                             <ul class="pagination">
@@ -175,47 +182,6 @@ function getResults(dataToSend) {
 
                     <div id="resultsAccordion" class="mx-auto w-75 accordion accordion-flush"></div>
                 `);
-            }
-            
-
-            if (result.length > 0) {
-                resultsFound = true;
-
-                // display first page and page navigation bar
-                if ($("#pageNavBar").length) {
-
-                    $("#pageNavBar").html(`
-                        <nav aria-label="page-navigation">
-                            <ul class="pagination">
-                                <li id="previousPage" class="page-item">
-                                    <button 
-                                        id="previousPageButton" 
-                                        class="page-link" 
-                                        onclick="this.blur();" 
-                                        aria-label="Previous">
-
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </button>
-                                </li>
-
-                                <li id="currentPage" class="page-item">
-                                    <span id="currentPageText" class="page-link">${dataToSend.page + 1}</span>
-                                </li>
-
-                                <li id="nextPage" class="page-item">
-                                    <button 
-                                        id="nextPageButton" 
-                                        class="page-link" 
-                                        onclick="this.blur();" 
-                                        aria-label="Next">
-
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </button>
-                                </li>
-                            </ul>
-                        </nav>
-                    `);
-                }
                 
                 // always display the first page first
                 if (dataToSend.page === 0) {
@@ -259,6 +225,20 @@ function getResults(dataToSend) {
                 });
 
             }
+
+            // use the total number of results to do stuff if getResultsLength has already returned without error 
+            if (resultsLengthFound) {
+                $("#currentPageText").html(`${dataToSend.page + 1} of ${totalPages}`);
+                
+                // disable nextPage button if on the last page
+                if (dataToSend.page + 1 === totalPages) {
+                    $("#nextPage").addClass("disabled");
+                    $("#nextPageButton").prop("disabled");
+                }
+            } else {
+                // signal to the user that total number of results has not yet been determined
+                $("#resultHeader").html(`Finding more videos containing "${dataToSend.query}"...`);
+            }
         }
     })
     .done(function (result) {
@@ -266,7 +246,6 @@ function getResults(dataToSend) {
         $("#loadingIcon").css("visibility", "hidden");
         $("#searchButton").removeAttr("disabled");
         $("#results").show();
-        //console.log(result);
     });
 }
 
@@ -282,16 +261,21 @@ function getResultsLength(dataToSend) {
         timeout: 60000,
         error: function (jqXHR, textStatus, errorThrown) {
             console.log(errorThrown);
+            $("#resultHeader").html(`Could not determine total number of results due to an error: ${errorThrown}`);
         },
         success: function (result) {
             // get amount of video results
-            let total = result.length;
+            resultsLengthFound = true;
+            let resultsTotal = result.length;
 
-            if (total >= 100) {
-                $("#resultHeader").html(`Found ${total} or more videos containing "${dataToSend.query}"`);
-            } else {
-                $("#resultHeader").html(`Found ${total} videos containing "${dataToSend.query}"`);
+            // calculate number of pages
+            totalPages = Math.floor(resultsTotal / 10);
+            if (resultsTotal % 10 > 0) {
+                totalPages++;
             }
+
+            $("#resultHeader").html(`Found ${resultsTotal} videos containing "${dataToSend.query}"`);
+            $("#currentPageText").html(`${dataToSend.page + 1} of ${totalPages}`);
 
             if (total <= 10) {
                 $("#nextPage").addClass("disabled");
