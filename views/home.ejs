@@ -69,8 +69,7 @@
 
                     <div class="col-2">
                         <select id="orderBy" class="form-select text-center" aria-label="Default select example">
-                            <option value="" selected>Default</option>
-                            <option value="1">Date</option>
+                            <option value="1" selected>Date</option>
                             <option value="2">Views</option>
                             <option value="3">Likes</option>
                             <option value="4">Duration</option>
@@ -81,8 +80,8 @@
                 <!-- Toggle order by descending results -->
                 <div class="filters row justify-content-center align-items-center">
                     <div class="col-2 mt-4 form-check">
-                        <input id="order" class="form-check-input mx-0" type="checkbox" value="ASC" disabled>
-                        <label class="form-check-label" for="order">Descending</label>
+                        <input id="order" class="form-check-input mx-0" type="checkbox" value="DESC">
+                        <label class="form-check-label" for="order">Ascending</label>
                     </div>
                 </div>
 
@@ -94,8 +93,11 @@
             </form>
 
             <!-- Search results get displayed inside this div -->
-            <div id="results" class="pt-4 d-flex flex-column justify-content-center"></div>
-
+            <div id="resultsContainer" class="mx-auto justify-content-center">
+                <p id="resultHeader" class="mb-0 pt-4 text-center"></p>
+                <div id="results" class="pt-4 d-flex flex-column justify-content-center"></div>
+            </div>
+            
         </div>
     </div>
 

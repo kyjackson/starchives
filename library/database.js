@@ -55,14 +55,14 @@ async function updateDb() {
     await timer(3000);
     await updateDbPlaylists(key, rsiChannelId);
 
-    // await timer(3000);
-    // await updateDbPlaylistItems(key, uploads);
+    await timer(3000);
+    await updateDbPlaylistItems(key, uploads);
     
-    // await timer(3000);
-    // await updateDbVideos(key);
+    await timer(3000);
+    await updateDbVideos(key);
 
-    //await timer(3000);
-    //updateDbCaptions(key, uploads);
+    await timer(3000);
+    updateDbCaptions(key, uploads);
 }
 
 /**
@@ -391,7 +391,7 @@ async function updateDbCaptions(key, playlistId) {
                     captionTrack: captions
                 });
             } else {
-                console.log(`Caption track for this video is already in the database. Skipping...`);
+                console.log(i);
             }
         }
     }
@@ -581,10 +581,11 @@ async function executeSQL(sql, params) {
 async function executeSQLFromServer(sql, params) {
 
     return new Promise(async function(resolve, reject) {
-        //let conn = dbConnection();
-        await pool.getConnection(async function(err, conn) {
+        await pool.getConnection(async function (err, conn) {
+            if (err) throw err;
             conn.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function(err, rows, fields) {
-                if (err) throw err;
+                if (err) throw err; 
+                
                 resolve(rows);
             });
     
