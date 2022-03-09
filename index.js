@@ -21,7 +21,7 @@ app.use(cookieParser());
 
 
 // start server
-app.listen(config.port, () => {
+app.listen(config.port || 8080, () => {
     // confirm environment variables on server start
     console.log(`Server started on port ${config.port}.`);
 });
