@@ -15,7 +15,8 @@ const {
     youtube,
     key,
     rsiChannelId,
-    uploads
+    uploads,
+    getSubtitles
 } = require('../config/config');
 
 
@@ -179,6 +180,7 @@ async function getVideo(key, videoId) {
     // return unfiltered video info
     return video;
 }
+
 
 
 /**

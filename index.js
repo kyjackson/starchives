@@ -1,15 +1,10 @@
 // set up package requirements for server
 const express = require('express');
 const cookieParser = require('cookie-parser');
-//const fs = require('fs');
-//const buffer = require('buffer');
-//const https = require('https');
 
 // initialize local modules
 const config = require('./config/config');
-const api = require('./library/api');
 const database = require('./library/database');
-const stats = require('./library/stats');
 
 // create the Express application
 const app = express();
@@ -19,9 +14,6 @@ app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use(cookieParser());
 
-// initialize variable for sending stats to the stats page
-let statsObject;
-
 
 
 //----------------Start server and initialize update routine----------------
@@ -29,13 +21,13 @@ let statsObject;
 
 
 // start server
-app.listen(8080, () => {
-  console.log('server started');
+app.listen(config.port, () => {
+    // confirm environment variables on server start
+    console.log(`Server started on port ${config.port}.`);
 });
 
 // in one fell swoop, update everything
 //updateDb();
-//updateStats();
 
 // update automatically at regular interval
 async function automatedUpdate() {

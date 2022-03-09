@@ -70,9 +70,9 @@ let questions = [
         title: "Why do searches take so long?",
         answer: `The captions take up a relatively large amount of space compared to all other data retrieved. Because all of this data is
             sent from the database to the server and then from the server to the user, response times quickly get noticeably worse 
-            as more results are returned. For this reason, the amount of results per page is capped at 10, and the total amount of results
-            is retrieved asynchronously from the page results, to ensure that response times are kept as low as possible, especially under
-            heavy traffic, while permitting all the functionality you'd expect from a search engine.`
+            as more results are returned. Additionally, you may experience worse response times while there's heavy traffic on the site. 
+            For this reason, the amount of results per page is capped at 10, and the total amount of results
+            is retrieved asynchronously from the page results, to ensure that response times are kept as low as possible.`
     }
 ];
 

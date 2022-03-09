@@ -20,8 +20,8 @@ $("#loadingIcon").hide();
 $(".filters").hide();
 $("#resultHeader").hide();
 
-// ensure default order is ascending every time the page is loaded
-$("#order").val("ASC"); 
+// ensure default order is descending every time the page is loaded
+$("#order").val("DESC"); 
 $("#order").prop("checked", false);
 
 
@@ -37,23 +37,10 @@ $("#filterSwitch").on("change", function(event) {
         $(".filters").toggle(false);
         $("#publishDate").val("");
         $("#duration").val("");
-        $("#orderBy").val("");
+        $("#orderBy").val("1");
         $("#order").prop("checked", false);
+        $("#order").val("DESC"); 
     }   
-});
-
-
-
-/**
- * Allow "Descending" filter only when column order is specified.
- */
-$("#orderBy").on("change", function(event) {
-    if ($("#orderBy").val()) {
-        $("#order").removeAttr("disabled");
-    } else {
-        $("#order").prop("checked", false);
-        $("#order").attr("disabled", "disabled");
-    }
 });
 
 
@@ -104,13 +91,11 @@ $("form").on("submit", function(event) {
         
     $("#loadingIcon").show();
     $("#loadingIcon").css("visibility", "visible");
-    //$("#results").show();
     
     resultsLengthFound = false;
     totalPages = 0;
     getResults(dataToSend);
     getResultsLength(dataToSend);
-    
 });
 
 
@@ -125,6 +110,10 @@ function getResults(dataToSend) {
         timeout: 15000,
         error: function (jqXHR, textStatus, errorThrown) {
             console.log(errorThrown);
+            $("#loadingIcon").hide();
+            $("#loadingIcon").css("visibility", "hidden");
+            $("#searchButton").removeAttr("disabled");
+            $("#results").show();
 
             if (errorThrown == "timeout") {
                 $("#results").html(`
@@ -139,10 +128,6 @@ function getResults(dataToSend) {
             }
         },
         success: function (result) {
-            // if (!resultsLengthFound) {
-            //     $("#resultHeader").html(`Finding more videos containing "${dataToSend.query}"...`);
-            // }
-            
             $("#resultHeader").show();
             if (result.length > 0) {
 
