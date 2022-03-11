@@ -1,6 +1,8 @@
 // set up package requirements for server
+const compression = require('compression');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+
 
 // initialize local modules
 const config = require('./config/config');
@@ -10,9 +12,12 @@ const database = require('./library/database');
 const app = express();
 
 // set Express to use the EJS template engine, set "public" as folder to serve clients from, enable cookie parser
+app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-app.use(cookieParser());
+// app.use(compression({
+//     filter: function () { return true;}
+// }));
 
 
 
@@ -41,6 +46,24 @@ async function updateDb() {
 
 
 
+const autocannon = require('autocannon');
+
+async function loadTest() {
+    let instance = autocannon({
+        url: 'http://localhost:8080/results?query=caterpillar',
+        connections: 100, 
+        amount: 100,
+        //pipelining: 1, 
+        //duration: 60,
+        timeout: 15
+    }, console.log);
+
+    autocannon.track(instance, { renderProgressBar: true });
+    
+}
+
+// loadTest();
+
 //----------------Routes----------------
 
 
@@ -64,7 +87,6 @@ app.get('/about', (req, res) => {
 // search endpoint
 app.get('/results', async (req, res) => {
     // fix samesite cookie problem
-    //response.setHeader('Set-Cookie', ['type=ninja', 'language=javascript']);
     //res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true });
 
     // get sql and params from buildQuery
@@ -116,12 +138,12 @@ app.get('/resultsLength', async (req, res) => {
     let sql = buildQuery(req).bsql;
     let params = buildQuery(req).bparams;
 
-    sql = sql.replace("*", "videoId");
+    sql = sql.replace("*", "COUNT(*) AS count");
 
     //sql += "LIMIT 100;";
     let results = await database.executeSQLFromServer(sql, params);
     let resultsLength = {
-        length: results[1].length
+        length: results[1][0].count
     };
 
     res.send(resultsLength);
@@ -146,34 +168,24 @@ app.get('/playlists', async (req, res) => {
 
 function buildQuery(req) {
     let query = req.query.query;
-    let sql = "";
+    let sql = `SELECT *,
+    CASE
+        WHEN videoDuration LIKE 'PT%H%M%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM%sS')
+        WHEN videoDuration LIKE 'PT%H%M' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM')
+        WHEN videoDuration LIKE 'PT%H%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%sS')
+        WHEN videoDuration LIKE 'PT%H' THEN STR_TO_DATE(videoDuration, 'PT%hH')
+        WHEN videoDuration LIKE 'PT%M%S' THEN STR_TO_DATE(videoDuration, 'PT%iM%sS')
+        WHEN videoDuration LIKE 'PT%M' THEN STR_TO_DATE(videoDuration, 'PT%iM')
+        WHEN videoDuration LIKE 'PT%S' THEN STR_TO_DATE(videoDuration, 'PT%sS')
+    END AS duration
+    FROM videos NATURAL JOIN captions WHERE `;
     let params = [];
 
     if (query) {
-        sql = `SELECT *, videoDuration,
-        CASE
-            WHEN videoDuration LIKE 'PT%H%M%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM%sS')
-            WHEN videoDuration LIKE 'PT%H%M' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM')
-            WHEN videoDuration LIKE 'PT%H%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%sS')
-            WHEN videoDuration LIKE 'PT%H' THEN STR_TO_DATE(videoDuration, 'PT%hH')
-            WHEN videoDuration LIKE 'PT%M%S' THEN STR_TO_DATE(videoDuration, 'PT%iM%sS')
-            WHEN videoDuration LIKE 'PT%M' THEN STR_TO_DATE(videoDuration, 'PT%iM')
-            WHEN videoDuration LIKE 'PT%S' THEN STR_TO_DATE(videoDuration, 'PT%sS')
-        END AS duration
-        FROM videos NATURAL JOIN captions WHERE captionTrack LIKE ? `;
+        sql += `captionTrack LIKE ? `;
         params.push(`%${query}%`);
     } else {
-        sql = `SELECT *, videoDuration,
-        CASE
-            WHEN videoDuration LIKE 'PT%H%M%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM%sS')
-            WHEN videoDuration LIKE 'PT%H%M' THEN STR_TO_DATE(videoDuration, 'PT%hH%iM')
-            WHEN videoDuration LIKE 'PT%H%S' THEN STR_TO_DATE(videoDuration, 'PT%hH%sS')
-            WHEN videoDuration LIKE 'PT%H' THEN STR_TO_DATE(videoDuration, 'PT%hH')
-            WHEN videoDuration LIKE 'PT%M%S' THEN STR_TO_DATE(videoDuration, 'PT%iM%sS')
-            WHEN videoDuration LIKE 'PT%M' THEN STR_TO_DATE(videoDuration, 'PT%iM')
-            WHEN videoDuration LIKE 'PT%S' THEN STR_TO_DATE(videoDuration, 'PT%sS')
-        END AS duration
-        FROM videos WHERE 1 `;
+        sql += `1 `;
     }
     
 

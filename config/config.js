@@ -19,8 +19,8 @@ const key = process.env.API;
 const rsiChannelId = 'UCTeLqJq1mXUX5WWoNXLmOIA';
 const uploads = 'UUTeLqJq1mXUX5WWoNXLmOIA'; // playlistId for the playlist that contains every video on the channel
 
-// create RemoteMySQL database pool connection
-const pool = mysql.createPool({
+// define and initialize database connection pool
+const liveDb = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     user: process.env.DB_USER,
@@ -29,18 +29,20 @@ const pool = mysql.createPool({
 
     connectionLimit: 10,
     multipleStatements: true
-});
+};
 
-// const pool = mysql.createPool({
-//     host: process.env.OLD_HOST,
-//     port: process.env.OLD_PORT,
-//     user: process.env.OLD_USER,
-//     password: process.env.OLD_PASS,
-//     database: process.env.OLD_DB,
+const testDb = {
+    host: process.env.OLD_HOST,
+    port: process.env.OLD_PORT,
+    user: process.env.OLD_USER,
+    password: process.env.OLD_PASS,
+    database: process.env.OLD_DB,
 
-//     connectionLimit: 5,
-//     multipleStatements: true
-// });
+    connectionLimit: 5,
+    multipleStatements: true
+};
+
+const pool = mysql.createPool(liveDb);
 
 // helpers
 const timer = ms => new Promise(res => setTimeout(res, ms));
