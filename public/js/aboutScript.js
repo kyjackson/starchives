@@ -43,6 +43,17 @@ let questions = [
     },
 
     {
+        title: "How often is this site updated?",
+        answer: `Currently the video database is updated about once per week while the site is still
+            undergoing major changes. Because of this, you may notice the quantity of views, likes, and comments 
+            displayed next to each video result are different than what Youtube says when you open the video
+            on that site. Also, the most recent videos (within 1 week) may not be available right away.
+            <br><br>
+            The site content itself is updated as frequently as I am able to
+            complete, test, and implement improvements.`
+    },
+
+    {
         title: "I still can't find what I'm looking for after several searches.",
         answer: `It's possible that what you're looking for may have been mentioned
             in a monthly report, commlink, or some other resource that isn't a video. 

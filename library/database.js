@@ -581,18 +581,6 @@ async function executeSQL(sql, params) {
 async function executeSQLFromServer(sql, params) {
 
     return new Promise(function(resolve, reject) {
-        // pool.getConnection(function (err, conn) {
-        //     if (err) throw err;
-
-        //     conn.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function(err, rows, fields) {
-                
-        //         if (err) throw (err);
-                
-        //         resolve(rows);
-        //         conn.release();
-        //     });
-        // });  
-
         pool.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function (err, rows, fields) { 
             if (err) throw (err);
             resolve(rows);

@@ -1,10 +1,69 @@
 /*
+ * Background
+ */
+.bg-image {
+    background:
+        linear-gradient(
+            rgba(0, 0, 0, 0.3), 
+            rgba(0, 0, 0, 0.3)
+        ),
+        url('../img/backgrounds/bg-sunrise-HR-min.png');
+    /* background-image: url('../img/backgrounds/bg-sunrise-HR-min.png'); */
+    /* background-image: url('../img/backgrounds/bg-moon-HR-min.png'); */
+    /* background-image: url('../img/backgrounds/bg-carrack-deck-HR-min.png'); */
+    /* background-image: url('../img/backgrounds/bg-carrack-roof-HR-min.png'); */
+    background-size: cover;
+    background-attachment: fixed;
+    background-color: #000000;
+}
+
+.container {
+    opacity: 95%;
+}
+
+/*
+ * Fonts
+ */
+.brand, .nav-link {
+    font-family: 'Zen Dots', sans-serif;
+    /* font-family: 'Orbitron', sans-serif; */
+    /* font-family: 'Source Code Pro', monospace; */
+    /* font-family: 'Jura', sans-serif; */
+    /* font-family: 'Inconsolata', monospace; */
+}
+
+.searchContainer {
+    font-family: 'Inconsolata', monospace;
+}
+
+.caveats, .tips, .purpose {
+    font-family: 'Inconsolata', monospace;
+}
+
+#faq {
+    font-family: 'Inconsolata', monospace;
+}
+
+.devNote {
+    font-family: 'Jura', sans-serif;
+}
+
+footer p {
+    /* font-family: 'IBM Plex Mono', monospace; */
+    font-family: 'Inconsolata', monospace;
+    /* font-family: 'Jura', sans-serif; */
+    /* font-family: 'Orbitron', sans-serif; */
+    /* font-family: 'Source Code Pro', monospace; */
+    /* font-family: 'Zen Dots', sans-serif; */
+}
+
+/*
  * Navbar
  */
 
 .nav-masthead .nav-link {
     padding: .25rem 0;
-    font-weight: 600;
+    font-weight: 300;
     color: rgba(255, 255, 255, .5);
     background-color: transparent;
     border-bottom: .25rem solid transparent;
@@ -67,12 +126,16 @@
  * Footer
  */
 
-footer a {
+.disclaimers a {
+    color: #fff;
+}
+
+.links a {
     color: #fff;
 }
 
 footer .disclaimers {
-    padding-right: 64px;
+    padding-right: 32px;
 }
 
 footer .links {
@@ -82,6 +145,14 @@ footer .links {
     /* margin-left: 32px; */
     margin-right: 32px;
 }
+
+footer .links-header {
+    font-size: .9rem;
+}
+
+/* .community-links {
+    font-size: .9rem;
+} */
 
 footer .logo {
     text-decoration: none;

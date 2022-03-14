@@ -7,7 +7,7 @@
 	<meta name="keywords" content="Star Citizen, Youtube, Captions, Search">
 	<meta 
 		name="description"
-		content="Search engine for captions of all videos uploaded to the Star Citizen Youtube channel">
+		content="Search engine for captions of all videos on the Star Citizen Youtube channel">
 	<meta name="author" content="Kyle Jackson">
 	<meta name="viewport" content="width=device-width">
 
@@ -20,8 +20,17 @@
 		integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" 
 		crossorigin="anonymous">
 
+	<!-- Fonts -->
+		<!-- Inconsolata -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300&family=Jura:wght@400&family=Orbitron&family=Source+Code+Pro:wght@200&family=Zen+Dots&display=swap" rel="stylesheet"> 
+ 
+
 	<!-- Additional CSS -->
-	<link href="/css/style.css" rel="stylesheet" type="text/css" />
+	<link rel="preload" as="image" href="../img/backgrounds/bg-sunrise-HR-min.png">
+	<link rel="stylesheet" as="style" href="/css/style.css" />
+	
 
 	<!-- JQuery | Bootstrap JS bundle w/ Popper.js -->
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -35,7 +44,7 @@
 
 </head>
 
-<body class=" h-100 text-center text-white bg-secondary">
+<body class=" h-100 text-center text-white bg-image">
 
 	<!-- Cover div containing both header and main content of the body -->
 	<div class="cover-container d-flex justify-content-center w-100 h-100 p-4 flex-column">
@@ -46,7 +55,7 @@
 
 				<!-- Brand/logo -->
 				<a class="float-md-start mb-0 text-light text-decoration-none" href="/">
-					<span class="fs-4">The Starchives</span>
+					<span class="fs-4 brand">Starchives</span>
 				</a>
 
 				<!-- Navbar containing links to all intra-site pages -->
