@@ -262,7 +262,7 @@ function getResultsLength(dataToSend) {
             $("#resultHeader").html(`Found ${resultsTotal} videos containing "${dataToSend.query}"`);
             $("#currentPageText").html(`${dataToSend.page + 1} of ${totalPages}`);
 
-            if (total <= 10) {
+            if (totalPages <= 10) {
                 $("#nextPage").addClass("disabled");
                 $("#nextPageButton").prop("disabled");
             }
@@ -347,8 +347,7 @@ function showPage(page) {
         let player = new YT.Player(`player-${id}`, {
             height: '480',
             width: '720',
-            videoId: id,
-            host: 'https://www.youtube.com'
+            videoId: id
         });
 
         // if there's a search query, get and display the captions

@@ -580,17 +580,11 @@ async function executeSQL(sql, params) {
 // workaround for problems using STR_TO_DATE
 async function executeSQLFromServer(sql, params) {
 
-    return new Promise(async function(resolve, reject) {
-        await pool.getConnection(async function (err, conn) {
-            if (err) throw err;
-            conn.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function(err, rows, fields) {
-                if (err) throw err; 
-                
-                resolve(rows);
-            });
-    
-            conn.release();
-        });  
+    return new Promise(function(resolve, reject) {
+        pool.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function (err, rows, fields) { 
+            if (err) throw (err);
+            resolve(rows);
+        });
     });
 }
 

@@ -17,7 +17,7 @@
 
 <footer class="container p-4 mt-0 text-light border-top d-flex justify-content-between">
     <div class="disclaimers text-start float-start">
-        <p class="divider">Disclaimers</p>
+        <p class="divider links-header">Disclaimers</p>
         <hr class="divider">
 
         <p>
@@ -30,6 +30,10 @@
             Star Citizen®, Roberts Space Industries®, and Cloud Imperium® are registered trademarks of Cloud Imperium 
             Rights LLC.
         </p>
+
+        <p>
+            Background photo is of a pilot observing the Hurston Dynamics building midflight, captured in-game by Intelo.
+        </p>
         
         <p>
             © 2022 - Starchives, designed and developed for the Star Citizen community, 
@@ -37,8 +41,8 @@
         </p>
     </div>
 
-    <div class="links text-white text-start">
-        <p class="divider">Official RSI Resources</p>
+    <div class="links text-start">
+        <p class="divider links-header">Official RSI Resources</p>
         <hr class="divider">
         
         <p >
@@ -64,8 +68,8 @@
         </p>
     </div>
 
-    <div class="links flex-fill text-white text-start">
-        <p class="divider">My Favorite Community Resources</p>
+    <div class="links flex-fill text-start">
+        <p class="divider links-header">My Favorite Community Resources</p>
         <hr class="divider">
 
         <p class="text-start">
@@ -87,9 +91,16 @@
   
 </footer>
 
+<script>
+    // set all links after the navbar to open in a new tab
+    $("main a").attr({
+        target: "_blank",
+        rel: "noreferrer noopener"
+    });
+</script>
+
 </main>
 </div>
 
 </body>
-<script src="js/script.js"></script>
 </html>
