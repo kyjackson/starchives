@@ -262,7 +262,7 @@ function getResultsLength(dataToSend) {
             $("#resultHeader").html(`Found ${resultsTotal} videos containing "${dataToSend.query}"`);
             $("#currentPageText").html(`${dataToSend.page + 1} of ${totalPages}`);
 
-            if (totalPages <= 10) {
+            if (totalPages <= 1) {
                 $("#nextPage").addClass("disabled");
                 $("#nextPageButton").prop("disabled");
             }

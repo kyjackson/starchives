@@ -51,10 +51,10 @@ const autocannon = require('autocannon');
 async function loadTest() {
     let instance = autocannon({
         url: 'http://localhost:8080/results?query=caterpillar',
-        connections: 100, 
-        amount: 100,
-        //pipelining: 1, 
-        //duration: 60,
+        connections: 250, 
+        //connectionRate: 10,
+        amount: 250,
+        //duration: 15,
         timeout: 15
     }, console.log);
 
@@ -182,8 +182,12 @@ function buildQuery(req) {
     let params = [];
 
     if (query) {
+        // searching with LIKE seems to perform better under load than using the FULLTEXT index in most cases,
+        // so this will remain as it is for now
         sql += `captionTrack LIKE ? `;
         params.push(`%${query}%`);
+        // sql += `MATCH(captionTrack) AGAINST( ? IN BOOLEAN MODE) `;
+        // params.push(`"${query}"`);
     } else {
         sql += `1 `;
     }

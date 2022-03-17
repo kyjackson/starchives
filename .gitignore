@@ -140,3 +140,6 @@ dist
 
 # db backup
 *.sql
+
+# synced vscode file
+index-DESKTOP-U9LT0LI.js
