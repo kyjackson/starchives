@@ -6,8 +6,8 @@
     <div class="p-4 mb-4 text-white bg-dark rounded-3 searchContainer">
         <div class="p-4 container-fluid" id="search">
             <form id="searchWindow">
-                <h1 class="display-6 fw">Enter Query</h1>
-                <p class="small">Simply enter a word or phrase in the search bar below to find all occurrences among all uploads on the Star Citizen Youtube channel.</p>
+                <h2 class="display-6 fw heading-lg">Enter Query</h2>
+                <p class="small">Simply enter a word or phrase in the search bar below to find every occurrence among all uploads on the Star Citizen Youtube channel.</p>
 
                 <!-- Search bar and filters switch -->
                 <div class="row justify-content-center align-items-center">
@@ -87,8 +87,8 @@
 
                 <!-- Search button -->
                 <button id="searchButton" class="btn btn-light btn-lg mt-4" type="submit">
-                    Search Archive
-                    <span id="loadingIcon" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span id="loadingIcon" class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                    <span id="searchButtonLabel">Search Starchives</span>
                 </button>
             </form>
 
@@ -107,15 +107,15 @@
         <!-- Caveats card -->
         <div class="col-md-6 caveats">
             <div class="h-100 p-5 text-white bg-dark rounded-3">
-                <h2>Caveats</h2>
-                <p class="text-start">1. <i>Captions are not always accurate.</i></p>
+                <h2 class="heading-md">Caveats</h2>
+                <p class="heading-sm-1 text-start">1. <i>Captions are not always accurate.</i></p>
                 <p class="ps-5 text-start">
-                    Due to the captions being auto-generated, they are not always accurate. What can be heard in a 
+                    Due to most of the captions being auto-generated, they are not always accurate. What can be heard in a 
                     video will sometimes be transcribed as something unexpected by Google's caption transcription 
                     algorithm. This tends to occur more often in older videos.
                 </p>
 
-                <p class="text-start">2. <i>Not all searches are conclusive.</i></p>
+                <p class="heading-sm-1 text-start">2. <i>Not all searches are conclusive.</i></p>
                 <p class="ps-5 text-start">
                     Sometimes, a certain word or phrase can be broken up in one video's caption track and not in 
                     another. This can cause similar search terms to unexpectedly return different results (e.g., 
@@ -124,7 +124,7 @@
                     to use a different keyword, or to be less specific.
                 </p>
 
-                <p class="text-start">3. <i>Auto-generated captions only have English localization.</i></p>
+                <p class="heading-sm-1 text-start">3. <i>Auto-generated captions only have English localization.</i></p>
                 <p class="ps-5 text-start">
                     Unfortunately, auto-generated captions are not available in languages other than English. If you 
                     are interested in volunteering to transcribe caption tracks for another language, contact me and 
@@ -136,8 +136,8 @@
         <!-- Tips card -->
         <div class="col-md-6 tips">
             <div class="h-100 p-5 justify-content-left text-white bg-dark rounded-3">
-                <h2>Tips</h2>
-                <p class="text-start"><i>Try multiple spellings when searching for a name.</i></p>
+                <h2 class="heading-md">Tips</h2>
+                <p class="heading-sm-2 text-start"><i>Try multiple spellings when searching for a name.</i></p>
                 <p class="ps-5 text-start">
                     Because "Lorville" is an uncommon word, the caption generator has interpreted it
                     as "lore ville," "loreville," "lor ville," and more at various occasions, so all three
@@ -145,14 +145,14 @@
                     especially if they are uncommon.
                 </p>
 
-                <p class="text-start"><i>Keep the query around three words at most and four characters at least for effective searches.</i></p>
+                <p class="heading-sm-2 text-start"><i>Keep the query around three words at most and four characters at least for effective searches.</i></p>
                 <p class="ps-5 text-start">
                     Caption lines tend to be around 6-12 words long, with the occasional exceptions for fast
                     speakers. Using too many words will yield few results, and using too few characters can
                     yield not only too many results, but also too many captions.
                 </p>
 
-                <p class="text-start"><i>Search without a query to get results without captions.</i></p>
+                <p class="heading-sm-2 text-start"><i>Search without a query to get results without captions.</i></p>
                 <p class="ps-5 text-start">
                     If you want to find videos without getting the captions and slowing the page down too much,
                     you can search without a query and use the filters to still get specific groups of videos and

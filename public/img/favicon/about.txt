@@ -1,0 +1,6 @@
+This favicon was generated using the following font:
+
+- Font Title: Zen Dots
+- Font Author: Copyright 2021 The Dots Project Authors (https://github.com/googlefonts/zen-dots)
+- Font Source: http://fonts.gstatic.com/s/zendots/v8/XRXX3ICfm00IGoesQeaETM_FcCIG.ttf
+- Font License: SIL Open Font License, 1.1 (http://scripts.sil.org/OFL))

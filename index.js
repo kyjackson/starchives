@@ -1,8 +1,6 @@
 // set up package requirements for server
-const compression = require('compression');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-
 
 // initialize local modules
 const config = require('./config/config');
@@ -11,13 +9,14 @@ const database = require('./library/database');
 // create the Express application
 const app = express();
 
-// set Express to use the EJS template engine, set "public" as folder to serve clients from, enable cookie parser
+// set Express to use the EJS template engine;
+// set "public" as folder to serve clients from;
+// enable cookie parser;
+// enable parsing of POST requests;
 app.use(cookieParser());
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-// app.use(compression({
-//     filter: function () { return true;}
-// }));
+app.use(express.urlencoded({extended: true}))
 
 
 
@@ -52,9 +51,7 @@ async function loadTest() {
     let instance = autocannon({
         url: 'http://localhost:8080/results?query=caterpillar',
         connections: 250, 
-        //connectionRate: 10,
         amount: 250,
-        //duration: 15,
         timeout: 15
     }, console.log);
 
@@ -100,7 +97,7 @@ app.get('/results', async (req, res) => {
         sql += `OFFSET ${page}`;
     }
 
-    let results = await database.executeSQLFromServer(sql, params);
+    let results = await database.executeSQLMainDB(sql, params);
 
     function paginate(array, pageSize, pageNumber) {
         return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
@@ -141,7 +138,7 @@ app.get('/resultsLength', async (req, res) => {
     sql = sql.replace("*", "COUNT(*) AS count");
 
     //sql += "LIMIT 100;";
-    let results = await database.executeSQLFromServer(sql, params);
+    let results = await database.executeSQLMainDB(sql, params);
     let resultsLength = {
         length: results[1][0].count
     };
@@ -151,9 +148,20 @@ app.get('/resultsLength', async (req, res) => {
 
 
 
+// receive contact forms and send to admin email
+app.post('/contact', async (req, res) => {
+    let form = req.body;
+    console.log(form);
+
+    setTimeout(function () {
+        return res.send(form);
+    }, 2000);
+});
+
+
+
 // endpoint testing
 app.get('/playlists', async (req, res) => {
-    // get playlists
     let sql = "SELECT * FROM playlists";
     let results = await database.executeSQL(sql);
 
