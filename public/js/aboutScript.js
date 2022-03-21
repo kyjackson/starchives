@@ -153,7 +153,7 @@ $("#contactInputContent").on("keydown", function () {
 
 // make sure sending icon and form results message are hidden when page is first loaded
 $("#sendingIcon").css("visibility", "hidden");
-$("#contactResults").hide();
+//$("#contactResults").hide();
 
 /**
  * Send the contact form once the requirements have been met.
