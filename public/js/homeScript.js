@@ -69,6 +69,7 @@ $("form").on("submit", function(event) {
 
     // disable search button to prevent additional queries while loading
     $("#searchButton").attr("disabled", "disabled");
+    $("#searchButtonLabel").html("Searching");
     $("#resultHeader").hide();
     $("#results").empty();
 
@@ -111,7 +112,7 @@ function getResults(dataToSend) {
         error: function (jqXHR, textStatus, errorThrown) {
             console.log(errorThrown);
             $("#loadingIcon").hide();
-            $("#loadingIcon").css("visibility", "hidden");
+            $("#searchButtonLabel").html("Search Starchives");
             $("#searchButton").removeAttr("disabled");
             $("#results").show();
 
@@ -128,7 +129,12 @@ function getResults(dataToSend) {
             }
         },
         success: function (result) {
+            $("#loadingIcon").hide();
+            $("#searchButton").removeAttr("disabled");
+            $("#searchButtonLabel").html("Search Starchives");
             $("#resultHeader").show();
+            $("#results").show();
+
             if (result.length > 0) {
 
                 // just update the pageNavBar if this query came from switching pages
@@ -139,7 +145,7 @@ function getResults(dataToSend) {
                                 <li id="previousPage" class="page-item">
                                     <button 
                                         id="previousPageButton" 
-                                        class="page-link" 
+                                        class="page-link bg-dark bg-gradient" 
                                         onclick="this.blur();" 
                                         aria-label="Previous">
 
@@ -148,13 +154,13 @@ function getResults(dataToSend) {
                                 </li>
 
                                 <li id="currentPage" class="page-item">
-                                    <span id="currentPageText" class="page-link">${dataToSend.page + 1}</span>
+                                    <span id="currentPageText" class="page-link bg-dark bg-gradient">${dataToSend.page + 1}</span>
                                 </li>
 
                                 <li id="nextPage" class="page-item">
                                     <button 
                                         id="nextPageButton" 
-                                        class="page-link" 
+                                        class="page-link bg-dark bg-gradient" 
                                         onclick="this.blur();" 
                                         aria-label="Next">
 
@@ -170,13 +176,11 @@ function getResults(dataToSend) {
                 
                 // always display the first page first
                 if (dataToSend.page === 0) {
-                    $("#previousPage").addClass("disabled");
-                    $("#previousPageButton").prop("disabled");
+                    disablePreviousPage();
                 }
 
                 if (result[0].length < 10) {
-                    $("#nextPage").addClass("disabled");
-                    $("#nextPageButton").prop("disabled");
+                    disableNextPage();
                 }
                 
                 //showPage(pageMap.get(page));
@@ -184,12 +188,11 @@ function getResults(dataToSend) {
 
                 // set up result page navigation
                 $("#previousPageButton").on("click", function () {
-                    $("#previousPage").addClass("disabled");
-                    $("#previousPageButton").prop("disabled");
-                    $("#nextPage").addClass("disabled");
-                    $("#nextPageButton").prop("disabled");
+                    disablePreviousPage();
+                    disableNextPage();
+
                     $("#currentPageText").html(`
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
                     `);
 
                     dataToSend.page--;
@@ -197,12 +200,11 @@ function getResults(dataToSend) {
                 });
 
                 $("#nextPageButton").on("click", function() {
-                    $("#previousPage").addClass("disabled");
-                    $("#previousPageButton").prop("disabled");
-                    $("#nextPage").addClass("disabled");
-                    $("#nextPageButton").prop("disabled");
+                    disablePreviousPage();
+                    disableNextPage();
+
                     $("#currentPageText").html(`
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
                     `);
 
                     dataToSend.page++;
@@ -217,20 +219,15 @@ function getResults(dataToSend) {
                 
                 // disable nextPage button if on the last page
                 if (dataToSend.page + 1 === totalPages) {
-                    $("#nextPage").addClass("disabled");
-                    $("#nextPageButton").prop("disabled");
+                    // $("#nextPage").addClass("disabled");
+                    // $("#nextPageButton").prop("disabled");
+                    disableNextPage();
                 }
             } else {
                 // signal to the user that total number of results has not yet been determined
                 $("#resultHeader").html(`Finding more videos containing "${dataToSend.query}"...`);
             }
         }
-    })
-    .done(function (result) {
-        $("#loadingIcon").hide();
-        $("#loadingIcon").css("visibility", "hidden");
-        $("#searchButton").removeAttr("disabled");
-        $("#results").show();
     });
 }
 
@@ -262,9 +259,10 @@ function getResultsLength(dataToSend) {
             $("#resultHeader").html(`Found ${resultsTotal} videos containing "${dataToSend.query}"`);
             $("#currentPageText").html(`${dataToSend.page + 1} of ${totalPages}`);
 
-            if (totalPages <= 10) {
-                $("#nextPage").addClass("disabled");
-                $("#nextPageButton").prop("disabled");
+            if (totalPages <= 1) {
+                // $("#nextPage").addClass("disabled");
+                // $("#nextPageButton").prop("disabled");
+                disableNextPage();
             }
         }
     });
@@ -321,21 +319,37 @@ function showPage(page) {
                     <div id="body-${id}" class="bg-dark accordion-body">
                         <div class="d-flex justify-content-center">
                             <div id="player-${id}" class="me-3"></div>
+
                             <div id="info-${id}" class="text-start">
                                 <p class="divider">
                                     Video Stats
-                                    <hr class="divider">
-                                    Duration: ${duration}
-                                    <br>
-                                    Views: ${viewCount}
-                                    <br>
-                                    Likes: ${likeCount}
-                                    <br>
-                                    Comments: ${commentCount}
                                 </p>
+                                <hr class="divider">
+                                
+                                <div class="d-flex">
+                                    <div class="pe-2 text-end">
+                                        Duration:
+                                        <br>
+                                        Views:
+                                        <br>
+                                        Likes:
+                                        <br>
+                                        Comments:
+                                    </div>
+                                    <div>
+                                        <span class="stats">${duration}</span>
+                                        <br>
+                                        <span class="stats">${viewCount}</span>
+                                        <br>
+                                        <span class="stats">${likeCount}</span>
+                                        <br>
+                                        <span class="stats">${commentCount}</span>
+                                    </div>
+                                </div>
                                 
                             </div>
                         </div>
+
                         <div id="timestamps-${id}" class="d-flex flex-column"></div>
                     </div>
                 </div>
@@ -345,8 +359,8 @@ function showPage(page) {
 
         // create the iframe for each video
         let player = new YT.Player(`player-${id}`, {
-            height: '480',
-            width: '720',
+            height: '360',
+            width: '640',
             videoId: id
         });
 
@@ -391,7 +405,7 @@ function showPage(page) {
 
                     <br>
                     <div class="pt-3 d-flex justify-content-left text-start">
-                        <a id="play-${key}-${page[video].videoId}" href="#header-${page[video].videoId}">${time}</a>
+                        <a id="play-${key}-${page[video].videoId}" class="btn btn-outline-light timestamp-btn py-0 px-2" href="#header-${page[video].videoId}" role="button">${time}</a>
                         <span>&nbsp;-&nbsp;</span>
                         <p>"...${value}..."</p>
                     </div>
@@ -406,6 +420,21 @@ function showPage(page) {
             });
         }
     }
+}
+
+
+
+// disable page buttons
+function disablePreviousPage() {
+    $("#previousPage").addClass("disabled");
+    $("#previousPageButton").prop("disabled");
+    $("#previousPageButton").css("color", "#777");
+}
+
+function disableNextPage() {
+    $("#nextPage").addClass("disabled");
+    $("#nextPageButton").prop("disabled");
+    $("#nextPageButton").css("color", "#777");
 }
 
 

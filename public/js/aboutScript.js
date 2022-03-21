@@ -1,5 +1,5 @@
 /**
- * This script populates the FAQ section on the about page.
+ * This script populates the FAQ section and directs the contact function on the about page.
  */
 
 
@@ -11,7 +11,9 @@ let questions = [
             <br><br> 
             On YouTube, open the video you want the transcript for and under the video, next to the 'SAVE' 
             button, click the three dots and select 'Open transcript.' From there you can read the video's
-            whole transcript.`
+            whole transcript.
+            <br><br>
+            <img src="img/transcript.png" class="figure-img img-fluid h-50" alt="Image showing how to open video transcript on YouTube.">`
     },
     
     {
@@ -73,15 +75,19 @@ let questions = [
 
     {
         title: "Where can I submit feedback?",
-        answer: `Please submit any and all feedback, especially constructive criticisms, to <a href="mailto:admin@starchives.org">admin@starchives.org</a>,
-            with the subject 'Starchives Feedback - [your name]' so I can get back to you easily if necessary.`
+        answer: `Please submit all feedback to <a href="mailto:admin@starchives.org">admin@starchives.org</a>,
+            with the subject 'Starchives Feedback' so I can get back to you easily if necessary.
+            <br><br>
+            Alternatively, you can use the contact area below to send me a message easily and anonymously.`
     },
 
     {
         title: "Why do searches take so long?",
         answer: `The captions take up a relatively large amount of space compared to all other data retrieved. Because all of this data is
             sent from the database to the server and then from the server to the user, response times quickly get noticeably worse 
-            as more results are returned. Additionally, you may experience worse response times while there's heavy traffic on the site. 
+            as more results are returned. 
+            <br><br>
+            Additionally, you may experience worse response times while there's heavy traffic on the site. 
             For this reason, the amount of results per page is capped at 10, and the total amount of results
             is retrieved asynchronously from the page results, to ensure that response times are kept as low as possible.`
     }
@@ -132,4 +138,103 @@ function populateFAQ(questions) {
             </div>
         `);
     } 
+}
+
+
+
+// if any of the contact input fields are changed while invalid, remove invalid message
+$("#contactInputName").on("keydown", function () {
+    $("#contactInputName").removeClass("is-invalid");
+});
+
+$("#contactInputContent").on("keydown", function () {
+    $("#contactInputContent").removeClass("is-invalid");
+});
+
+// make sure sending icon and form results message are hidden when page is first loaded
+$("#sendingIcon").css("visibility", "hidden");
+//$("#contactResults").hide();
+
+/**
+ * Send the contact form once the requirements have been met.
+ */
+$("form").on("submit", function(event) {
+    event.preventDefault();
+    //event.stopPropagation();
+
+    // first check if all form fields are valid
+    let sender = $("#contactInputName").val();
+    let message = $("#contactInputContent").val();
+    if (sender == "") {
+        $("#contactInputName").addClass("is-invalid");
+    }
+
+    if (message == "") {
+        $("#contactInputContent").addClass("is-invalid");
+    }
+
+    if (sender && message) {
+        // disable contact button to prevent spamming while submitting
+        $("#contactButton").attr("disabled", "disabled");
+        $("#contactButtonLabel").html("Sending");
+        $("#sendingIcon").css("visibility", "visible");
+
+        // get values of search bar and filter ready for ajax
+        messageToSend = {
+            sender: $("#contactInputName").val(),
+            message: $("#contactInputContent").val()
+        };
+        
+        // send message
+        contactAdmin(messageToSend);
+    }
+});
+
+
+
+/**
+ * Use POST request to send message to my site admin email address.
+ */
+function contactAdmin(messageToSend) {
+    $.ajax({
+        method: "POST",
+        url: `${window.location.origin}/contact`,
+        data: messageToSend,
+        dataType: 'json',
+        //contentType: "application/x-www-form-urlencoded",
+        timeout: 15000,
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.log(errorThrown);
+            //$("#sendingIcon").hide();
+            $("#sendingIcon").css("visibility", "hidden");
+            $("#contactButton").removeAttr("disabled");
+            $("#contactResults").show();
+
+            $("#contactResults").html(`
+                <p class="mx-auto justify-content-center">
+                    <br>
+                    Something went wrong. Please try again later, or submit your feedback manually <a href="mailto:admin@starchives.org">here</a>.
+                </p>
+            `);
+        },
+        success: function () {
+            // If the server processed the request successfully, it will send a response back.
+            console.log("Form received successfully.");
+            $("#sendingIcon").css("visibility", "hidden");
+            $("#contactButtonLabel").html("Sent");
+            $("#contactResults").show();
+
+            $("#contactResults").html(`
+                <p class="mx-auto justify-content-center">
+                    <br>
+                    Form received successfully. Thanks for your submission!
+                </p>
+            `);
+
+            // clear input fields
+            // $("#contactInputName").val("");
+            // $("#contactInputContent").val("");
+        }
+    });
+
 }

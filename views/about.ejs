@@ -9,31 +9,31 @@
         <div class="d-flex container-fluid">
 
             <!-- Project statement -->
-            <div id="projectStatement" class="p-4 container-fluid purpose" id="search">
-                <h4>The Problem</h4>
-                <p class="text-start">
+            <div id="projectStatement" class="p-4 container-fluid purpose">
+                <h4 class="heading-md text-start">The Problem</h4>
+                <p class="text-start indent">
                     At the time of writing this, there are over 1500 uploads on the Star Citizen YouTube 
                     channel, ranging anywhere from 30 seconds to over an hour in length. When discussing the game, 
-                    people will often bring up topics mentioned in one or more videos uploaded years ago. With 
-                    multiple weekly uploads over the years, so much has been spoken by CIG that people wanting to 
-                    provide sources for their info will have an exceedingly difficult time doing so if they don't 
-                    know the particular video.
+                    people will often quote a developer or bring up topics mentioned in one or more videos uploaded 
+                    years ago. With multiple weekly uploads over the years, so much has been spoken by CIG that people 
+                    wanting to provide sources for their info will have an exceedingly difficult time doing so if 
+                    they don't know the particular video.
                 </p>
 
-                <h4>The Solution</h4>
-                <p class="text-start">
+                <h4 class="heading-md text-start">The Solution</h4>
+                <p class="text-start indent">
                     With the help of YouTube's auto-generated captions (and those provided by CIG, when available), 
                     this changes. This site allows anyone to search a database of all videos on the Star Citizen channel 
                     and their associated captions to quickly find the info they're searching for. Timestamps to all 
                     occurrences are provided for search terms that have a match. Searching for any 
-                    mention of future plans, bespoke, or ships that punch above their weight class should now take minutes, not hours, 
+                    mention of server meshing, bespoke, or ships that punch above their weight class should now take minutes, not hours, 
                     of combing through videos. Additionally, video stats are provided so anyone can see which 
-                    videos have been the most far-reaching, what the community has been most interested in, and more.
+                    videos have been the most far-reaching, what the community has been most interested in, <br> and more.
                 </p>
 
-                <h4>Additional Benefits</h4>
-                <p class="text-start">
-                    Furthermore, being an <i>archive</i>, this site acts as a hub for many Star Citizen info resources that anyone may 
+                <h4 class="heading-md text-start">Additional Benefits</h4>
+                <p class="text-start indent">
+                    Furthermore, being an <i>archive</i>, this site acts as a quick access hub for many Star Citizen info resources that anyone may 
                     find useful at one time or another. At the bottom of the page, you'll find external links to several official RSI materials, as 
                     well as some of my favorite Star Citizen community projects, containing particularly useful information about all 
                     aspects of the game and its development.
@@ -42,7 +42,7 @@
 
             <!-- FAQ -->
             <div id="faq" class="py-4 px-5 container-fluid">
-                <h2>FAQ</h2>
+                <h3 class="heading-md">FAQ</h3>
                 <!-- Questions are appended to this accordion -->
                 <div id="faqAccordion" class="mx-auto w-100 accordion accordion-flush"></div>
             </div>
@@ -63,13 +63,61 @@
                     both inspire the ongoing pursuit of my goals in software 
                     development. This site is among the first of hopefully many fruits to result from that inspiration.
                     <br><br>
-                    If you found it helpful as a prospective player, consider signing up at RSI with my referral code: 
+                    If you found this site helpful as a prospective player, consider signing up at RSI with my referral code:
+                    <br> 
                     <a href="https://robertsspaceindustries.com/enlist?referral=STAR-NRZ7-WNLV">STAR-NRZ7-WNLV</a>
                     <br>
                     If you found it useful as a fellow fan of the game, consider <a href="https://www.paypal.com/donate/?business=2AM6DLL3WFDF6&no_recurring=0&item_name=As+the+creator+of+Starchives%2C+thank+you+for+helping+keep+the+site+online.+All+donations+go+toward+the+site%27s+monthly+expenses.&currency_code=USD">donating</a> to help keep it online.
                     <br>
-                    If you have any feedback, questions, or job offers, feel free to <a href="mailto:admin@starchives.org">contact me</a>.
+                    If you have any feedback, questions, or job offers, feel free to contact me <a href="mailto:admin@starchives.org">here</a>
+                    or use the box to the right.
                 </p>
+            </div>
+
+            <div class="vr"></div>
+
+            <!-- Contact section -->
+            <div id="contactSection" class="py-2 px-4 container-fluid justify-content-center">
+
+                <form id="contactWindow" class="needs-validation" novalidate>
+
+                    <!-- Contact form submit button -->
+                    <button id="contactButton" class="btn btn-light" type="submit" disabled>
+                        <h5 id="contactButtonLabel" class="heading-md">Contact</h5>
+                    </button>
+                    <div id="sendingIcon" class="spinner-grow spinner-grow-sm float-end" role="status" aria-hidden="true"></div>
+
+                    <div id="contactResults" class="justify-content-center">Form temporarily disabled.</div>
+                    
+                    
+                    <div class="text-start mb-2">
+                        <label for="contactInputName" class="form-label">Contact Info:</label>
+                        <input 
+                            type="text" 
+                            class="form-control form-control-sm" 
+                            id="contactInputName" 
+                            placeholder="Email / Discord (or leave something else for no reply)"
+                            required>
+                        <div class="invalid-feedback">
+                            Contact info field cannot be empty.
+                        </div>
+                    </div>
+
+                    <div class="text-start mb-2">
+                        <label for="contactInputContent" class="form-label">Feedback:</label>
+                        <textarea 
+                            class="form-control form-control-sm" 
+                            id="contactInputContent" 
+                            rows="2" 
+                            placeholder="Questions, comments, something else? Write it here!"
+                            maxlength="10"
+                            required></textarea>
+                        <div class="invalid-feedback">
+                            Feedback field cannot be empty.
+                        </div>
+                    </div>
+                </form>
+                
             </div>
             
         </div>

@@ -577,8 +577,8 @@ async function executeSQL(sql, params) {
 
 
 
-// workaround for problems using STR_TO_DATE
-async function executeSQLFromServer(sql, params) {
+// to be used when video duration format has been updated
+async function executeSQLMainDB(sql, params) {
 
     return new Promise(function(resolve, reject) {
         pool.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function (err, rows, fields) { 
@@ -590,25 +590,15 @@ async function executeSQLFromServer(sql, params) {
 
 
 
-// example function for accessing a database pool in an alternative way
-function dbConnection() {
+// includes workaround for using STR_TO_DATE function in query
+async function executeSQLTestDB(sql, params) {
 
-    // create RemoteMySQL database pool connection
-    const pool = mysql.createPool({
-        connectionLimit: 5,
-        host: "remotemysql.com",
-        user: "mrNBNedB7e",
-        password: "LlEFgvnh9P",
-        database: "mrNBNedB7e"
+    return new Promise(function(resolve, reject) {
+        pool.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function (err, rows, fields) { 
+            if (err) throw (err);
+            resolve(rows);
+        });
     });
-
-    // confirm connection has been established
-    pool.getConnection(function(err) {
-        if (err) throw (err);
-        console.log("Connected to database pool.");
-    });
-
-    return pool;
 }
 
 
@@ -622,5 +612,6 @@ module.exports = {
     updateDbCaptions,
     tableUpdate,
     executeSQL,
-    executeSQLFromServer
+    executeSQLMainDB,
+    executeSQLTestDB
 };
