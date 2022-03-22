@@ -82,25 +82,46 @@
                 <form id="contactWindow" class="needs-validation" novalidate>
 
                     <!-- Contact form submit button -->
-                    <button id="contactButton" class="btn btn-light" type="submit" disabled>
+                    <button id="contactButton" class="btn btn-light" type="submit">
                         <h5 id="contactButtonLabel" class="heading-md">Contact</h5>
                     </button>
                     <div id="sendingIcon" class="spinner-grow spinner-grow-sm float-end" role="status" aria-hidden="true"></div>
 
-                    <div id="contactResults" class="justify-content-center">Form temporarily disabled.</div>
+                    <div id="contactResults" class="justify-content-center"></div>
                     
-                    
-                    <div class="text-start mb-2">
+                    <div class="row">
+                    <div class="col-6 text-start mb-2">
                         <label for="contactInputName" class="form-label">Contact Info:</label>
                         <input 
                             type="text" 
                             class="form-control form-control-sm" 
                             id="contactInputName" 
-                            placeholder="Email / Discord (or leave something else for no reply)"
+                            placeholder="Email / Discord (if reply is desired)"
+                            maxlength="64"
                             required>
                         <div class="invalid-feedback">
                             Contact info field cannot be empty.
                         </div>
+                    </div>
+
+                    <div class="col-6 text-start mb-2">
+                        <label for="contactSelectTopic" class="form-label">Topic:</label>
+                        <select 
+                            class="form-select form-select-sm" 
+                            id="contactSelectTopic"
+                            aria-label=".form-select-sm"
+                            required>
+                            <option value="" selected>Select a topic</option>
+                            <option value="Suggestion">Suggestion</option>
+                            <option value="Question">Question</option>
+                            <option value="Comment">Comment</option>
+                            <option value="Bug Report">Bug Report</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Topic must be selected.
+                        </div>
+                    </div>
                     </div>
 
                     <div class="text-start mb-2">
@@ -110,7 +131,7 @@
                             id="contactInputContent" 
                             rows="2" 
                             placeholder="Questions, comments, something else? Write it here!"
-                            maxlength="10"
+                            maxlength="512"
                             required></textarea>
                         <div class="invalid-feedback">
                             Feedback field cannot be empty.

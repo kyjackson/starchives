@@ -30,6 +30,7 @@
     "moment": "^2.29.1",
     "mysql": "^2.18.1",
     "node-fetch": "^3.2.0",
+    "nodemailer": "^6.7.3",
     "youtube-captions-scraper": "^2.0.0"
   },
   "devDependencies": {

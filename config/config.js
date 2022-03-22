@@ -1,6 +1,6 @@
 /**
- * All sensitive info regarding API, DB, and other necessary functions of the project should be located
- * in this file. Once the website is live, this file should not be committed.
+ * All setup functions and variables required for the server and database to operate and update correctly
+ * should be located in this file. Sensitive info is not committed.
  */
 
 // set up package requirements for exports
@@ -9,8 +9,10 @@ dotenv.config();
 
 const readline = require('readline');
 const mysql = require('mysql');
-const {google} = require('googleapis');
-const {getSubtitles}  = require('youtube-captions-scraper');
+const nodemailer = require("nodemailer");
+const { google } = require('googleapis');
+const OAuth2 = google.auth.OAuth2;
+const { getSubtitles } = require('youtube-captions-scraper');
 const EventEmitter = require('events');
 
 // simplify youtube api access
@@ -44,6 +46,57 @@ const testDb = {
 
 const pool = mysql.createPool(liveDb);
 
+
+
+// set up OAuth2 and mail transporter in one function
+const createTransporter = async () => {
+    
+    const oauth2Client = new OAuth2(
+        process.env.CLIENT_ID,
+        process.env.CLIENT_SECRET,
+        "https://developers.google.com/oauthplayground"
+    );
+
+    oauth2Client.setCredentials({
+        refresh_token: process.env.REFRESH_TOKEN
+    });
+
+    const accessToken = await new Promise((resolve, reject) => {
+        oauth2Client.getAccessToken((err, token) => {
+            if (err) reject(err);
+
+            resolve(token);
+        });
+    });
+
+    // set up mail client
+    let mailTransporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            type: "OAuth2",
+            user: "admin@starchives.org",
+            clientId: process.env.CLIENT_ID,
+            clientSecret: process.env.CLIENT_SECRET,
+            refreshToken: process.env.REFRESH_TOKEN,
+            accessToken: accessToken
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
+
+    return mailTransporter;
+};
+
+// easily send mail
+const sendEmail = async (mail) => {
+    let transporter = await createTransporter();
+    let receipt = await transporter.sendMail(mail);
+    return receipt;
+};
+
+
+
 // helpers
 const timer = ms => new Promise(res => setTimeout(res, ms));
 const event = new EventEmitter();
@@ -53,6 +106,7 @@ module.exports = {
 
     readline,
     pool,
+    sendEmail,
     youtube,
     key,
     rsiChannelId,
