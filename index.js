@@ -45,22 +45,6 @@ async function updateDb() {
 
 
 
-const autocannon = require('autocannon');
-
-async function loadTest() {
-    let instance = autocannon({
-        url: 'http://localhost:8080/results?query=caterpillar',
-        connections: 250, 
-        amount: 250,
-        timeout: 15
-    }, console.log);
-
-    autocannon.track(instance, { renderProgressBar: true });
-    
-}
-
-// loadTest();
-
 //----------------Routes----------------
 
 
@@ -151,11 +135,22 @@ app.get('/resultsLength', async (req, res) => {
 // receive contact forms and send to admin email
 app.post('/contact', async (req, res) => {
     let form = req.body;
-    console.log(form);
 
-    setTimeout(function () {
-        return res.send(form);
-    }, 2000);
+    let mail = {
+        from: `"${form.sender}" admin@starchives.org`,
+        to: "admin@starchives.org",
+        subject: `[Starchives Feedback] - ${form.topic}`,
+        text: form.message
+    };
+
+    let transaction = await config.sendEmail(mail, async function (err, info) {
+        if (err) throw err;
+        return info;
+    });
+
+    if (transaction.accepted) {
+        res.send(transaction);
+    }
 });
 
 

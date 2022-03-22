@@ -147,13 +147,17 @@ $("#contactInputName").on("keydown", function () {
     $("#contactInputName").removeClass("is-invalid");
 });
 
+$("#contactSelectTopic").on("change", function () {
+    $("#contactSelectTopic").removeClass("is-invalid");
+});
+
 $("#contactInputContent").on("keydown", function () {
     $("#contactInputContent").removeClass("is-invalid");
 });
 
 // make sure sending icon and form results message are hidden when page is first loaded
 $("#sendingIcon").css("visibility", "hidden");
-//$("#contactResults").hide();
+$("#contactResults").hide();
 
 /**
  * Send the contact form once the requirements have been met.
@@ -164,16 +168,21 @@ $("form").on("submit", function(event) {
 
     // first check if all form fields are valid
     let sender = $("#contactInputName").val();
+    let topic = $("#contactSelectTopic").val();
     let message = $("#contactInputContent").val();
     if (sender == "") {
         $("#contactInputName").addClass("is-invalid");
+    }
+
+    if (topic == "") {
+        $("#contactSelectTopic").addClass("is-invalid");
     }
 
     if (message == "") {
         $("#contactInputContent").addClass("is-invalid");
     }
 
-    if (sender && message) {
+    if (sender && topic && message) {
         // disable contact button to prevent spamming while submitting
         $("#contactButton").attr("disabled", "disabled");
         $("#contactButtonLabel").html("Sending");
@@ -182,6 +191,7 @@ $("form").on("submit", function(event) {
         // get values of search bar and filter ready for ajax
         messageToSend = {
             sender: $("#contactInputName").val(),
+            topic: $("#contactSelectTopic").val(),
             message: $("#contactInputContent").val()
         };
         
@@ -208,6 +218,7 @@ function contactAdmin(messageToSend) {
             //$("#sendingIcon").hide();
             $("#sendingIcon").css("visibility", "hidden");
             $("#contactButton").removeAttr("disabled");
+            $("#contactButtonLabel").html("Contact");
             $("#contactResults").show();
 
             $("#contactResults").html(`

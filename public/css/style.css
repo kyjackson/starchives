@@ -156,12 +156,12 @@
     font-weight: 600;
 }
 
-#contactInputName, #contactInputContent {
+#contactInputName, #contactSelectTopic, #contactInputContent {
     color: #fff;
     background-color:rgb(70, 70, 70);
 }
 
-#contactInputName::placeholder, #contactInputContent::placeholder {
+#contactInputName::placeholder, option[value=""], #contactInputContent::placeholder {
     color:rgb(175, 175, 175);
 }
 
