@@ -109,6 +109,7 @@ function getResults(dataToSend) {
         dataType: 'json',
         data: dataToSend,
         timeout: 15000,
+        // cache: false, // ---- if cache is causing problems, enable then re-disable
         error: function (jqXHR, textStatus, errorThrown) {
             console.log(errorThrown);
             $("#loadingIcon").hide();
@@ -179,12 +180,13 @@ function getResults(dataToSend) {
                     disablePreviousPage();
                 }
 
-                if (result[0].length < 10) {
+                if (result.length < 10) {   // must use result[0] when using custom pagination
                     disableNextPage();
                 }
                 
                 //showPage(pageMap.get(page));
-                showPage(result[0]);
+                showPage(result);   // must use result[0] when using custom pagination
+                //console.log(result);
 
                 // set up result page navigation
                 $("#previousPageButton").on("click", function () {

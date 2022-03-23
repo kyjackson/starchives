@@ -83,7 +83,7 @@ let questions = [
 
     {
         title: "Why do searches take so long?",
-        answer: `The captions take up a relatively large amount of space compared to all other data retrieved. Because all of this data is
+        answer: `The captions take up a large amount of space relative to all other data retrieved. Because all of this data is
             sent from the database to the server and then from the server to the user, response times quickly get noticeably worse 
             as more results are returned. 
             <br><br>
