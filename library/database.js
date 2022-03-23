@@ -577,11 +577,11 @@ async function executeSQL(sql, params) {
 
 
 
-// to be used when video duration format has been updated
+// for use on the live db or other dbs where ALLOW_INVALID_DATES is enabled globally
 async function executeSQLMainDB(sql, params) {
 
     return new Promise(function(resolve, reject) {
-        pool.query("SET SESSION sql_mode='ALLOW_INVALID_DATES'; " + sql, params, function (err, rows, fields) { 
+        pool.query(sql, params, function (err, rows, fields) { 
             if (err) throw (err);
             resolve(rows);
         });

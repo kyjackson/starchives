@@ -1,22 +1,42 @@
-// set up package requirements for server
+// set up package requirements for server and create the Express application
+const compression = require('compression');
+const helmet = require('helmet');
 const express = require('express');
-const cookieParser = require('cookie-parser');
+const app = express();
+//const cookieParser = require('cookie-parser'); ---- disabled until determined necessary
 
 // initialize local modules
 const config = require('./config/config');
 const database = require('./library/database');
 
-// create the Express application
-const app = express();
+// set up helmet
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                // the following sites must be whitelisted for Starchives to work properly
+                "script-src": ["'self'", "https: 'unsafe-inline'", "starchives.org", "www.youtube.com", "code.jquery.com", "cdn.jsdelivr.net"],
+                "default-src": ["starchives.org", "www.youtube.com", "localhost:8080"],
+            },
+        },
 
+        crossOriginEmbedderPolicy: false,
+
+        crossOriginResourcePolicy: {
+            policy: "cross-origin"
+        }
+    })
+);
+
+// enable compression;
 // set Express to use the EJS template engine;
 // set "public" as folder to serve clients from;
-// enable cookie parser;
 // enable parsing of POST requests;
-app.use(cookieParser());
+app.use(compression());
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-app.use(express.urlencoded({extended: true}))
+app.use(express.urlencoded({ extended: true }))
+// app.use(cookieParser()); ---- disabled until determined necessary
 
 
 
@@ -31,7 +51,7 @@ app.listen(config.port || 8080, () => {
 });
 
 // in one fell swoop, update everything
-//updateDb();
+// updateDb(); ---- disabled until automatic updates are more thoroughly tested
 
 // update automatically at regular interval
 async function automatedUpdate() {
@@ -51,12 +71,20 @@ async function updateDb() {
 
 // home route
 app.get('/', (req, res) => {
+    res.set({
+        "Cache-Control": "public, max-age=604800"
+    });
+
     res.render('home');
 });
 
 // about route
 app.get('/about', (req, res) => {
-  res.render('about');
+    res.set({
+        "Cache-Control": "public, max-age=604800"
+    });
+
+    res.render('about');
 });
 
 
@@ -68,7 +96,11 @@ app.get('/about', (req, res) => {
 // search endpoint
 app.get('/results', async (req, res) => {
     // fix samesite cookie problem
-    //res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true });
+    // res.cookie('SIDCC', 'value', { sameSite: 'none', secure: true }); ---- more research required
+    res.set({
+        "Cache-Control": "public, max-age=86400, no-cache"
+        // "Clear-Site-Data": "cache" // use this if cache becomes corrupted
+    });
 
     // get sql and params from buildQuery
     let sql = buildQuery(req).bsql;
@@ -83,37 +115,53 @@ app.get('/results', async (req, res) => {
 
     let results = await database.executeSQLMainDB(sql, params);
 
-    function paginate(array, pageSize, pageNumber) {
-        return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
-    }
+    /*
+     * note: When using the function executeSQLTestDB (which includes an additional SQL statement in the query),
+     *       results will return an additonal outer array, therefore we use results[1] to access the correct info.
+     *       
+     *       The following commented code provides a function that paginates the results of a database query,
+     *       and allows defining of the page size so that any amount of videos can be retrieved with one API call
+     *       while still having pagination.
+     * 
+     *       This custom pagination is no longer needed for the live environment, but is necessary for the test environment
+     *       and any other database where ALLOW_INVALID_DATES cannot be enabled globally.
+     */
 
-    // at most, we want 10 videos per page of results
-    let pages = 0;
-    let pageSize = 10;
+    // function paginate(array, pageSize, pageNumber) {
+    //     return array.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize);   
+    // }
 
-    // note: when using the function executeSQLFromServer (which includes an additional SQL statement in the query),
-    //       results will return an additonal outer array, therefore we use results[1] to access the correct info.
-    if (results[1].length > pageSize) {
-        pages = results[1].length / pageSize;
-    }
+    // // at most, we want 10 videos per page of results
+    // let pages = 0;
+    // let pageSize = 10;
+
+    // if (results[1].length > pageSize) {
+    //     pages = results[1].length / pageSize;
+    // }
     
-    let resultsPages = [];
-    for (let i = 0; i <= pages; i++) {
-        resultsPages.push(paginate(results[1], pageSize, i));
-    }
+    // let resultsPages = [];
+    // for (let i = 0; i <= pages; i++) {
+    //     resultsPages.push(paginate(results[1], pageSize, i));
+    // }
 
-    // remove the last page if it's empty
-    if (resultsPages[resultsPages.length-1].length == 0) {
-        resultsPages.pop();
-    }
+    // // remove the last page if it's empty
+    // if (resultsPages[resultsPages.length-1].length == 0) {
+    //     resultsPages.pop();
+    // }
+    
+    // res.send(resultsPages);
 
-    res.send(resultsPages);
+    res.send(results);
 });
 
 
 
 // get length of results separately from actual results to improve response times
 app.get('/resultsLength', async (req, res) => {
+    res.set({
+        "Cache-Control": "public, max-age=86400, no-cache"
+        // "Clear-Site-Data": "cache" // use this if cache becomes corrupted
+    });
 
     // get sql and params from buildQuery
     let sql = buildQuery(req).bsql;
@@ -124,8 +172,12 @@ app.get('/resultsLength', async (req, res) => {
     //sql += "LIMIT 100;";
     let results = await database.executeSQLMainDB(sql, params);
     let resultsLength = {
-        length: results[1][0].count
+        length: results[0].count
     };
+
+    // let resultsLength = {
+    //     length: results[1][0].count
+    // };
 
     res.send(resultsLength);
 });
